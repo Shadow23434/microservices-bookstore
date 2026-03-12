@@ -1,103 +1,77 @@
 param(
-    [string]$GatewayBaseUrl = "http://localhost:8000",
-    [int]$TimeoutSeconds = 120
+    [string]$WorkspaceRoot = $PSScriptRoot
 )
 
 $ErrorActionPreference = "Stop"
 
-function Wait-ForEndpoint {
-    param(
-        [string]$Url,
-        [int]$TimeoutSeconds = 120
-    )
+function Escape-SqlLiteral {
+    param([AllowNull()][string]$Value)
 
-    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
-    while ((Get-Date) -lt $deadline) {
-        try {
-            Invoke-RestMethod -Uri $Url -Method Get | Out-Null
-            return
-        } catch {
-            Start-Sleep -Seconds 2
-        }
+    if ($null -eq $Value) {
+        return "NULL"
     }
 
-    throw "Timed out waiting for $Url"
+    return "'" + ($Value -replace "'", "''") + "'"
 }
 
-function Wait-ForHealthyServices {
+function Invoke-Sqlite {
     param(
-        [string]$HealthUrl,
-        [int]$TimeoutSeconds = 120
+        [string]$DbPath,
+        [string]$Sql
     )
 
-    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
-    while ((Get-Date) -lt $deadline) {
-        try {
-            $health = Invoke-RestMethod -Uri $HealthUrl -Method Get
-            $states = @($health.services.PSObject.Properties | ForEach-Object { $_.Value })
-            if ($states.Count -gt 0 -and ($states | Where-Object { $_ -ne "up" }).Count -eq 0) {
-                return
-            }
-        } catch {
-        }
-        Start-Sleep -Seconds 3
+    $output = & sqlite3 $DbPath $Sql 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "SQLite command failed for $DbPath`nSQL: $Sql`nError: $($output -join [Environment]::NewLine)"
     }
 
-    throw "Timed out waiting for healthy services at $HealthUrl"
+    return $output
 }
 
-function Get-Json {
-    param([string]$Url)
-
-    return Invoke-RestMethod -Uri $Url -Method Get
-}
-
-function Post-Json {
+function Invoke-SqliteScalar {
     param(
-        [string]$Url,
-        [object]$Body
+        [string]$DbPath,
+        [string]$Sql
     )
 
-    # Explicitly encode as UTF-8 bytes so non-ASCII characters (e.g. Vietnamese)
-    # are transmitted correctly regardless of the system's default ANSI code page.
-    $json  = $Body | ConvertTo-Json -Depth 10 -Compress
-    $bytes = [System.Text.Encoding]::UTF8.GetBytes($json)
-    return Invoke-RestMethod -Uri $Url -Method Post -ContentType "application/json; charset=utf-8" -Body $bytes
-}
-
-function Ensure-Entity {
-    param(
-        [string]$ListUrl,
-        [object]$Payload,
-        [scriptblock]$Match
-    )
-
-    $existing = Get-Json -Url $ListUrl
-    foreach ($item in $existing) {
-        if (& $Match $item $Payload) {
-            return $item
-        }
+    $rows = Invoke-Sqlite -DbPath $DbPath -Sql $Sql
+    if ($null -eq $rows -or $rows.Count -eq 0) {
+        return $null
     }
 
-    return Post-Json -Url $ListUrl -Body $Payload
+    return "$($rows[0])".Trim()
 }
 
-function Get-CollectionCount {
-    param([object]$Items)
+function Ensure-DbFile {
+    param([string]$DbPath)
 
-    if ($null -eq $Items) {
-        return 0
+    if (-not (Test-Path -Path $DbPath -PathType Leaf)) {
+        throw "Database file not found: $DbPath"
     }
-
-    return @($Items | ForEach-Object { $_ }).Count
 }
 
-$apiBase = "$($GatewayBaseUrl.TrimEnd('/'))/api"
+if (-not (Get-Command sqlite3 -ErrorAction SilentlyContinue)) {
+    throw "sqlite3 command was not found in PATH. Please install sqlite3 or add it to PATH first."
+}
 
-Write-Host "Waiting for API Gateway at $GatewayBaseUrl ..." -ForegroundColor Cyan
-Wait-ForEndpoint -Url "$GatewayBaseUrl/health/" -TimeoutSeconds $TimeoutSeconds
-Write-Host "Waiting for all services to report healthy ..." -ForegroundColor Cyan
-Wait-ForHealthyServices -HealthUrl "$GatewayBaseUrl/health/" -TimeoutSeconds $TimeoutSeconds
+$db = @{
+    books = Join-Path $WorkspaceRoot "book-service/book_service/db.sqlite3"
+    categories = Join-Path $WorkspaceRoot "catalog-service/catalog_service/db.sqlite3"
+    customers = Join-Path $WorkspaceRoot "customer-service/customer_service/db.sqlite3"
+    carts = Join-Path $WorkspaceRoot "cart-service/cart_service/db.sqlite3"
+    staff = Join-Path $WorkspaceRoot "staff-service/staff_service/db.sqlite3"
+    managers = Join-Path $WorkspaceRoot "manager-service/manager_service/db.sqlite3"
+    reviews = Join-Path $WorkspaceRoot "comment-rate-service/comment_rate_service/db.sqlite3"
+    orders = Join-Path $WorkspaceRoot "order-service/order_service/db.sqlite3"
+    payments = Join-Path $WorkspaceRoot "pay-service/pay_service/db.sqlite3"
+    shipments = Join-Path $WorkspaceRoot "ship-service/ship_service/db.sqlite3"
+}
+
+foreach ($entry in $db.GetEnumerator()) {
+    Ensure-DbFile -DbPath $entry.Value
+}
+
+$bookHasImageUrlColumn = [bool](Invoke-SqliteScalar -DbPath $db.books -Sql "SELECT 1 FROM pragma_table_info('app_book') WHERE name = 'imageUrl' LIMIT 1;")
 
 $categories = @(
     @{ name = "Programming"; description = "Sách lập trình và thực hành phát triển phần mềm" },
@@ -107,6 +81,20 @@ $categories = @(
 )
 
 $books = @(
+    @{
+        title = "Django REST Framework"
+        author = "Tom Christie"
+        price = "380000"
+        stock = 10
+        imageUrl = "https://tse2.mm.bing.net/th/id/OIP.ltQXmHg61bcfaX86yY_bAwAAAA?pid=ImgDet&w=191&h=235&c=7&o=7&rm=3"
+    },
+    @{
+        title = "Microservices Patterns"
+        author = "Chris Richardson"
+        price = "520000"
+        stock = 8
+        imageUrl = "https://th.bing.com/th/id/OIP.1C4yVyGkcWqJdnLSR_cLIAHaLH?w=115&h=180&c=7&r=0&o=7&pid=1.7&rm=3"
+    },
     @{
         title = "Python Crash Course"
         author = "Eric Matthes"
@@ -164,70 +152,144 @@ $managers = @(
 
 Write-Host "Seeding categories ..." -ForegroundColor Cyan
 foreach ($category in $categories) {
-    Ensure-Entity -ListUrl "$apiBase/categories/" -Payload $category -Match {
-        param($existing, $payload)
-        $existing.name -eq $payload.name
-    } | Out-Null
+    $name = Escape-SqlLiteral $category.name
+    $description = Escape-SqlLiteral $category.description
+    Invoke-Sqlite -DbPath $db.categories -Sql @"
+INSERT INTO app_category (name, description, created_at, parent_id)
+SELECT $name, $description, datetime('now'), NULL
+WHERE NOT EXISTS (
+    SELECT 1 FROM app_category WHERE name = $name
+);
+"@ | Out-Null
 }
 
 Write-Host "Seeding books ..." -ForegroundColor Cyan
 $bookIndex = @{}
 foreach ($book in $books) {
-    $created = Ensure-Entity -ListUrl "$apiBase/books/" -Payload $book -Match {
-        param($existing, $payload)
-        $existing.title -eq $payload.title -and $existing.author -eq $payload.author
+    $title = Escape-SqlLiteral $book.title
+    $author = Escape-SqlLiteral $book.author
+    $price = [double]$book.price
+    $stock = [int]$book.stock
+    $imageUrl = Escape-SqlLiteral $book.imageUrl
+
+    if ($bookHasImageUrlColumn) {
+        Invoke-Sqlite -DbPath $db.books -Sql @"
+INSERT INTO app_book (title, author, price, stock, imageUrl)
+SELECT $title, $author, $price, $stock, $imageUrl
+WHERE NOT EXISTS (
+    SELECT 1 FROM app_book WHERE title = $title AND author = $author
+);
+"@ | Out-Null
     }
-    $bookIndex[$created.title] = $created
+    else {
+        Invoke-Sqlite -DbPath $db.books -Sql @"
+INSERT INTO app_book (title, author, price, stock)
+SELECT $title, $author, $price, $stock
+WHERE NOT EXISTS (
+    SELECT 1 FROM app_book WHERE title = $title AND author = $author
+);
+"@ | Out-Null
+    }
+
+    $bookId = Invoke-SqliteScalar -DbPath $db.books -Sql "SELECT id FROM app_book WHERE title = $title AND author = $author LIMIT 1;"
+    if (-not $bookId) {
+        throw "Cannot resolve id for seeded book: $($book.title)"
+    }
+
+    $bookIndex[$book.title] = [int]$bookId
 }
 
 Write-Host "Seeding customers ..." -ForegroundColor Cyan
 $customerIndex = @{}
 foreach ($customer in $customers) {
-    $created = Ensure-Entity -ListUrl "$apiBase/customers/" -Payload $customer -Match {
-        param($existing, $payload)
-        $existing.email -eq $payload.email
+    $name = Escape-SqlLiteral $customer.name
+    $email = Escape-SqlLiteral $customer.email
+
+    Invoke-Sqlite -DbPath $db.customers -Sql @"
+INSERT INTO app_customer (name, email)
+SELECT $name, $email
+WHERE NOT EXISTS (
+    SELECT 1 FROM app_customer WHERE email = $email
+);
+"@ | Out-Null
+
+    $customerId = Invoke-SqliteScalar -DbPath $db.customers -Sql "SELECT id FROM app_customer WHERE email = $email LIMIT 1;"
+    if (-not $customerId) {
+        throw "Cannot resolve id for seeded customer: $($customer.email)"
     }
-    $customerIndex[$created.email] = $created
+
+    $customerIndex[$customer.email] = [int]$customerId
+}
+
+Write-Host "Seeding carts ..." -ForegroundColor Cyan
+foreach ($customer in $customers) {
+    $customerId = [int]$customerIndex[$customer.email]
+
+    Invoke-Sqlite -DbPath $db.carts -Sql @"
+INSERT INTO app_cart (customer_id, created_at)
+SELECT $customerId, datetime('now')
+WHERE NOT EXISTS (
+    SELECT 1 FROM app_cart WHERE customer_id = $customerId
+);
+"@ | Out-Null
 }
 
 Write-Host "Seeding staff ..." -ForegroundColor Cyan
 foreach ($staff in $staffMembers) {
-    Ensure-Entity -ListUrl "$apiBase/staff/" -Payload $staff -Match {
-        param($existing, $payload)
-        $existing.employee_id -eq $payload.employee_id
-    } | Out-Null
+    $name = Escape-SqlLiteral $staff.name
+    $email = Escape-SqlLiteral $staff.email
+    $role = Escape-SqlLiteral $staff.role
+    $employeeId = Escape-SqlLiteral $staff.employee_id
+    $isActive = if ($staff.is_active) { 1 } else { 0 }
+
+    Invoke-Sqlite -DbPath $db.staff -Sql @"
+INSERT INTO app_staff (name, email, role, employee_id, is_active, created_at)
+SELECT $name, $email, $role, $employeeId, $isActive, datetime('now')
+WHERE NOT EXISTS (
+    SELECT 1 FROM app_staff WHERE employee_id = $employeeId
+);
+"@ | Out-Null
 }
 
 Write-Host "Seeding managers ..." -ForegroundColor Cyan
 foreach ($manager in $managers) {
-    Ensure-Entity -ListUrl "$apiBase/managers/" -Payload $manager -Match {
-        param($existing, $payload)
-        $existing.employee_id -eq $payload.employee_id
-    } | Out-Null
+    $name = Escape-SqlLiteral $manager.name
+    $email = Escape-SqlLiteral $manager.email
+    $department = Escape-SqlLiteral $manager.department
+    $employeeId = Escape-SqlLiteral $manager.employee_id
+    $isActive = if ($manager.is_active) { 1 } else { 0 }
+
+    Invoke-Sqlite -DbPath $db.managers -Sql @"
+INSERT INTO app_manager (name, email, department, employee_id, is_active, created_at)
+SELECT $name, $email, $department, $employeeId, $isActive, datetime('now')
+WHERE NOT EXISTS (
+    SELECT 1 FROM app_manager WHERE employee_id = $employeeId
+);
+"@ | Out-Null
 }
 
 $reviews = @(
     @{
-        customer_id = $customerIndex["nguyenvanan@example.com"].id
-        book_id = $bookIndex["Python Crash Course"].id
+        customer_id = [int]$customerIndex["nguyenvanan@example.com"]
+        book_id = [int]$bookIndex["Python Crash Course"]
         rating = 5
         comment = "Sách nhập môn rất dễ theo dõi và thực hành."
     },
     @{
-        customer_id = $customerIndex["nguyenvanan@example.com"].id
-        book_id = $bookIndex["Clean Code"].id
+        customer_id = [int]$customerIndex["nguyenvanan@example.com"]
+        book_id = [int]$bookIndex["Clean Code"]
         rating = 5
         comment = "Nội dung thực tế, hữu ích khi review code."
     },
     @{
-        customer_id = $customerIndex["tranminhchau@example.com"].id
-        book_id = $bookIndex["Fluent Python"].id
+        customer_id = [int]$customerIndex["tranminhchau@example.com"]
+        book_id = [int]$bookIndex["Fluent Python"]
         rating = 4
         comment = "Phù hợp khi đã có nền tảng Python."
     },
     @{
-        customer_id = $customerIndex["lehoangduc@example.com"].id
-        book_id = $bookIndex["The Pragmatic Programmer"].id
+        customer_id = [int]$customerIndex["lehoangduc@example.com"]
+        book_id = [int]$bookIndex["The Pragmatic Programmer"]
         rating = 5
         comment = "Rất đáng đọc cho mọi lập trình viên."
     }
@@ -235,66 +297,119 @@ $reviews = @(
 
 Write-Host "Seeding reviews ..." -ForegroundColor Cyan
 foreach ($review in $reviews) {
-    Ensure-Entity -ListUrl "$apiBase/reviews/" -Payload $review -Match {
-        param($existing, $payload)
-        $existing.customer_id -eq $payload.customer_id -and $existing.book_id -eq $payload.book_id
-    } | Out-Null
+    $customerId = [int]$review.customer_id
+    $bookId = [int]$review.book_id
+    $rating = [int]$review.rating
+    $comment = Escape-SqlLiteral $review.comment
+
+    Invoke-Sqlite -DbPath $db.reviews -Sql @"
+INSERT INTO app_review (customer_id, book_id, rating, comment, created_at, updated_at)
+SELECT $customerId, $bookId, $rating, $comment, datetime('now'), datetime('now')
+WHERE NOT EXISTS (
+    SELECT 1 FROM app_review WHERE customer_id = $customerId AND book_id = $bookId
+);
+"@ | Out-Null
 }
 
-$existingOrders = Get-Json -Url "$apiBase/orders/"
-if ($null -eq $existingOrders) {
-    $existingOrders = @()
-}
 $orders = @(
     @{
-        customer_id = $customerIndex["nguyenvanan@example.com"].id
+        customer_id = [int]$customerIndex["nguyenvanan@example.com"]
         shipping_address = "123 Nguyen Hue, Quan 1, TP.HCM"
         payment_method = "credit_card"
         items = @(
-            @{ book_id = $bookIndex["Python Crash Course"].id; quantity = 1; unit_price = $bookIndex["Python Crash Course"].price },
-            @{ book_id = $bookIndex["Clean Code"].id; quantity = 1; unit_price = $bookIndex["Clean Code"].price }
+            @{ title = "Python Crash Course"; quantity = 1; unit_price = "320000" },
+            @{ title = "Clean Code"; quantity = 1; unit_price = "410000" }
         )
     },
     @{
-        customer_id = $customerIndex["tranminhchau@example.com"].id
+        customer_id = [int]$customerIndex["tranminhchau@example.com"]
         shipping_address = "45 Le Loi, Hai Chau, Da Nang"
         payment_method = "e_wallet"
         items = @(
-            @{ book_id = $bookIndex["Fluent Python"].id; quantity = 1; unit_price = $bookIndex["Fluent Python"].price }
+            @{ title = "Fluent Python"; quantity = 1; unit_price = "495000" }
         )
     }
 )
 
 Write-Host "Seeding orders, payments and shipments ..." -ForegroundColor Cyan
 foreach ($order in $orders) {
-    $matched = $existingOrders | Where-Object {
-        $_.customer_id -eq $order.customer_id -and $_.shipping_address -eq $order.shipping_address
-    } | Select-Object -First 1
+    $customerId = [int]$order.customer_id
+    $address = Escape-SqlLiteral $order.shipping_address
+    $paymentMethod = Escape-SqlLiteral $order.payment_method
+    $totalAmount = 0.0
 
-    if (-not $matched) {
-        $matched = Post-Json -Url "$apiBase/orders/" -Body $order
-        $existingOrders += $matched
+    foreach ($item in $order.items) {
+        $totalAmount += ([double]$item.unit_price * [int]$item.quantity)
     }
-}
 
-Write-Host "Generating recommendations ..." -ForegroundColor Cyan
-foreach ($customer in $customerIndex.Values) {
-    Get-Json -Url "$apiBase/recommendations/$($customer.id)/" | Out-Null
+    $totalAmountStr = $totalAmount.ToString("0.00", [System.Globalization.CultureInfo]::InvariantCulture)
+
+    Invoke-Sqlite -DbPath $db.orders -Sql @"
+INSERT INTO app_order (customer_id, status, total_amount, shipping_address, created_at, updated_at)
+SELECT $customerId, 'pending', $totalAmountStr, $address, datetime('now'), datetime('now')
+WHERE NOT EXISTS (
+    SELECT 1 FROM app_order WHERE customer_id = $customerId AND shipping_address = $address
+);
+"@ | Out-Null
+
+    $orderId = Invoke-SqliteScalar -DbPath $db.orders -Sql "SELECT id FROM app_order WHERE customer_id = $customerId AND shipping_address = $address ORDER BY id DESC LIMIT 1;"
+    if (-not $orderId) {
+        throw "Cannot resolve id for seeded order of customer_id=$customerId"
+    }
+
+    foreach ($item in $order.items) {
+        $bookTitle = $item.title
+        if (-not $bookIndex.ContainsKey($bookTitle)) {
+            throw "Book '$bookTitle' was not found in seeded book index."
+        }
+
+        $bookId = [int]$bookIndex[$bookTitle]
+        $quantity = [int]$item.quantity
+        $unitPrice = ([double]$item.unit_price).ToString("0.00", [System.Globalization.CultureInfo]::InvariantCulture)
+
+        Invoke-Sqlite -DbPath $db.orders -Sql @"
+INSERT INTO app_orderitem (book_id, quantity, unit_price, order_id)
+SELECT $bookId, $quantity, $unitPrice, $orderId
+WHERE NOT EXISTS (
+    SELECT 1 FROM app_orderitem
+    WHERE order_id = $orderId AND book_id = $bookId AND quantity = $quantity AND unit_price = $unitPrice
+);
+"@ | Out-Null
+    }
+
+    Invoke-Sqlite -DbPath $db.payments -Sql @"
+INSERT INTO app_payment (order_id, customer_id, amount, method, status, created_at, updated_at)
+SELECT $orderId, $customerId, $totalAmountStr, $paymentMethod, 'pending', datetime('now'), datetime('now')
+WHERE NOT EXISTS (
+    SELECT 1 FROM app_payment WHERE order_id = $orderId
+);
+"@ | Out-Null
+
+    $trackingNumber = Escape-SqlLiteral ("TRK-{0}" -f $orderId)
+    Invoke-Sqlite -DbPath $db.shipments -Sql @"
+INSERT INTO app_shipment (order_id, customer_id, address, tracking_number, status, created_at, updated_at)
+SELECT $orderId, $customerId, $address, $trackingNumber, 'pending', datetime('now'), datetime('now')
+WHERE NOT EXISTS (
+    SELECT 1 FROM app_shipment WHERE order_id = $orderId
+);
+"@ | Out-Null
 }
 
 $summary = [ordered]@{
-    books = Get-CollectionCount (Get-Json -Url "$apiBase/books/")
-    customers = Get-CollectionCount (Get-Json -Url "$apiBase/customers/")
-    staff = Get-CollectionCount (Get-Json -Url "$apiBase/staff/")
-    managers = Get-CollectionCount (Get-Json -Url "$apiBase/managers/")
-    categories = Get-CollectionCount (Get-Json -Url "$apiBase/categories/")
-    orders = Get-CollectionCount (Get-Json -Url "$apiBase/orders/")
-    payments = Get-CollectionCount (Get-Json -Url "$apiBase/payments/")
-    shipments = Get-CollectionCount (Get-Json -Url "$apiBase/shipments/")
-    reviews = Get-CollectionCount (Get-Json -Url "$apiBase/reviews/")
+    books = [int](Invoke-SqliteScalar -DbPath $db.books -Sql "SELECT COUNT(1) FROM app_book;")
+    customers = [int](Invoke-SqliteScalar -DbPath $db.customers -Sql "SELECT COUNT(1) FROM app_customer;")
+    carts = [int](Invoke-SqliteScalar -DbPath $db.carts -Sql "SELECT COUNT(1) FROM app_cart;")
+    staff = [int](Invoke-SqliteScalar -DbPath $db.staff -Sql "SELECT COUNT(1) FROM app_staff;")
+    managers = [int](Invoke-SqliteScalar -DbPath $db.managers -Sql "SELECT COUNT(1) FROM app_manager;")
+    categories = [int](Invoke-SqliteScalar -DbPath $db.categories -Sql "SELECT COUNT(1) FROM app_category;")
+    orders = [int](Invoke-SqliteScalar -DbPath $db.orders -Sql "SELECT COUNT(1) FROM app_order;")
+    order_items = [int](Invoke-SqliteScalar -DbPath $db.orders -Sql "SELECT COUNT(1) FROM app_orderitem;")
+    payments = [int](Invoke-SqliteScalar -DbPath $db.payments -Sql "SELECT COUNT(1) FROM app_payment;")
+    shipments = [int](Invoke-SqliteScalar -DbPath $db.shipments -Sql "SELECT COUNT(1) FROM app_shipment;")
+    reviews = [int](Invoke-SqliteScalar -DbPath $db.reviews -Sql "SELECT COUNT(1) FROM app_review;")
 }
 
-Write-Host "Seed complete." -ForegroundColor Green
+Write-Host "Seed complete (direct SQLite)." -ForegroundColor Green
 $summary.GetEnumerator() | ForEach-Object {
     Write-Host ("{0}: {1}" -f $_.Key, $_.Value)
 }

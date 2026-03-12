@@ -24,7 +24,7 @@ function App() {
             <Route path="*" element={<Navbar />} />
           </Routes>
 
-          <main className="flex-grow flex flex-col">
+          <main className="grow flex flex-col">
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />

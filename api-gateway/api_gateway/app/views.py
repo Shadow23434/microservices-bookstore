@@ -1,4 +1,4 @@
-﻿import os
+import os
 import requests
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -7,20 +7,20 @@ from rest_framework.response import Response
 from rest_framework import status
 
 SERVICES = {
-    "customers": os.environ.get("CUSTOMER_SERVICE_URL", "http://customer-service:8000"),
-    "books": os.environ.get("BOOK_SERVICE_URL", "http://book-service:8000"),
-    "carts": os.environ.get("CART_SERVICE_URL", "http://cart-service:8000"),
-    "staff": os.environ.get("STAFF_SERVICE_URL", "http://staff-service:8000"),
-    "managers": os.environ.get("MANAGER_SERVICE_URL", "http://manager-service:8000"),
-    "categories": os.environ.get("CATALOG_SERVICE_URL", "http://catalog-service:8000"),
-    "orders": os.environ.get("ORDER_SERVICE_URL", "http://order-service:8000"),
-    "shipments": os.environ.get("SHIP_SERVICE_URL", "http://ship-service:8000"),
-    "payments": os.environ.get("PAY_SERVICE_URL", "http://pay-service:8000"),
+    "customers": os.environ.get("CUSTOMER_SERVICE_URL", "http://customer-service:8888"),
+    "books": os.environ.get("BOOK_SERVICE_URL", "http://book-service:8888"),
+    "carts": os.environ.get("CART_SERVICE_URL", "http://cart-service:8888"),
+    "staff": os.environ.get("STAFF_SERVICE_URL", "http://staff-service:8888"),
+    "managers": os.environ.get("MANAGER_SERVICE_URL", "http://manager-service:8888"),
+    "categories": os.environ.get("CATALOG_SERVICE_URL", "http://catalog-service:8888"),
+    "orders": os.environ.get("ORDER_SERVICE_URL", "http://order-service:8888"),
+    "shipments": os.environ.get("SHIP_SERVICE_URL", "http://ship-service:8888"),
+    "payments": os.environ.get("PAY_SERVICE_URL", "http://pay-service:8888"),
     "reviews": os.environ.get(
-        "COMMENT_RATE_SERVICE_URL", "http://comment-rate-service:8000"
+        "COMMENT_RATE_SERVICE_URL", "http://comment-rate-service:8888"
     ),
     "recommendations": os.environ.get(
-        "RECOMMENDER_SERVICE_URL", "http://recommender-ai-service:8000"
+        "RECOMMENDER_SERVICE_URL", "http://recommender-ai-service:8888"
     ),
 }
 

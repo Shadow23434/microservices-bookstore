@@ -1,273 +1,280 @@
-# 📚 Bookstore Microservice
+# Bookstore Microservice
 
-Hệ thống quản lý nhà sách xây dựng theo kiến trúc **Microservices** với Django REST Framework, giao tiếp qua API Gateway, giao diện web tích hợp sẵn.
+Hệ thống quản lý nhà sách theo kiến trúc microservices, dùng nhiều Django service giao tiếp qua API Gateway. Repo hiện có 2 lớp giao diện:
 
----
+- Giao diện quản trị bằng Django templates trong `api-gateway`.
+- Một frontend React/Vite riêng trong thư mục `frontend`.
 
-## 🏗️ Kiến trúc hệ thống
+## Tổng quan kiến trúc
 
-```
-                        ┌─────────────┐
-                        │  Browser /  │
-                        │   Client    │
-                        └──────┬──────┘
-                               │ :8000
-                        ┌──────▼──────┐
-                        │ API Gateway │  ← Web UI + Proxy
-                        └──────┬──────┘
-          ┌───────────┬────────┼────────┬───────────┐
-          │           │        │        │           │
-    ┌─────▼────┐ ┌────▼───┐ ┌─▼──────┐ ┌▼────────┐ ┌▼────────────┐
-    │ customer │ │  book  │ │  cart  │ │  order  │ │    staff    │
-    │  :8001   │ │ :8002  │ │ :8003  │ │  :8007  │ │   :8004     │
-    └──────────┘ └────────┘ └────────┘ └─────────┘ └─────────────┘
-          ┌──────────┬──────────┬────────────┬──────────┐
-    ┌─────▼────┐ ┌───▼────┐ ┌──▼─────┐ ┌────▼───┐ ┌────▼──────────┐
-    │ manager  │ │catalog │ │  ship  │ │  pay   │ │ comment-rate  │
-    │  :8005   │ │ :8006  │ │ :8008  │ │ :8009  │ │    :8010      │
-    └──────────┘ └────────┘ └────────┘ └────────┘ └───────────────┘
-                                                   ┌───────────────┐
-                                                   │ recommender-ai│
-                                                   │    :8011      │
-                                                   └───────────────┘
+Luồng chạy mặc định:
+
+```text
+Browser
+  |
+  | http://localhost:8888
+  v
+API Gateway (Django)
+  |
+  +-- /api/customers/        -> customer-service
+  +-- /api/books/            -> book-service
+  +-- /api/carts/            -> cart-service
+  +-- /api/staff/            -> staff-service
+  +-- /api/managers/         -> manager-service
+  +-- /api/categories/       -> catalog-service
+  +-- /api/orders/           -> order-service
+  +-- /api/shipments/        -> ship-service
+  +-- /api/payments/         -> pay-service
+  +-- /api/reviews/          -> comment-rate-service
+  +-- /api/recommendations/  -> recommender-ai-service
 ```
 
-### Các service
+Tất cả Django service bên trong Docker network đều chạy trên cổng `8888`. Chỉ `api-gateway` được publish ra máy host qua `http://localhost:8888`.
 
-| Service | Port | Chức năng |
-|---------|------|-----------|
-| **api-gateway** | 8000 | Web UI + điều phối request tới các service |
-| **customer-service** | 8001 | Quản lý khách hàng, tự tạo giỏ hàng |
-| **book-service** | 8002 | Quản lý sách, tồn kho |
-| **cart-service** | 8003 | Giỏ hàng theo từng khách |
-| **staff-service** | 8004 | Quản lý nhân viên |
-| **manager-service** | 8005 | Quản lý quản lý/admin |
-| **catalog-service** | 8006 | Danh mục, thể loại sách |
-| **order-service** | 8007 | Đơn hàng + tự tạo payment & shipment |
-| **ship-service** | 8008 | Vận chuyển |
-| **pay-service** | 8009 | Thanh toán |
-| **comment-rate-service** | 8010 | Đánh giá, bình luận |
-| **recommender-ai-service** | 8011 | Gợi ý sách |
+## Danh sách service
 
----
+| Service                  | Vai trò                | Ghi chú                             |
+| ------------------------ | ---------------------- | ----------------------------------- |
+| `api-gateway`            | Web UI + reverse proxy | Entry point của hệ thống            |
+| `customer-service`       | Quản lý khách hàng     | Có liên kết tạo giỏ hàng            |
+| `book-service`           | Quản lý sách           | Dữ liệu sách, tồn kho               |
+| `cart-service`           | Quản lý giỏ hàng       | Phụ thuộc `book-service`            |
+| `staff-service`          | Quản lý nhân viên      | CRUD staff                          |
+| `manager-service`        | Quản lý quản lý        | CRUD manager                        |
+| `catalog-service`        | Quản lý danh mục       | Category cho sách                   |
+| `order-service`          | Quản lý đơn hàng       | Gọi `pay-service` và `ship-service` |
+| `ship-service`           | Quản lý vận chuyển     | Tạo shipment                        |
+| `pay-service`            | Quản lý thanh toán     | Tạo payment                         |
+| `comment-rate-service`   | Đánh giá, bình luận    | Review và rating                    |
+| `recommender-ai-service` | Gợi ý sách             | Dùng dữ liệu sách và review         |
 
-## ⚙️ Yêu cầu
+## Yêu cầu môi trường
 
-| Công cụ | Phiên bản tối thiểu |
-|---------|---------------------|
-| [Docker Desktop](https://www.docker.com/products/docker-desktop/) | 24+ |
-| [Docker Compose](https://docs.docker.com/compose/) | 2.20+ (tích hợp trong Docker Desktop) |
+Để chạy toàn bộ hệ thống bằng Docker:
 
-> **Không cần** cài Python, Django hay bất kỳ thư viện nào trực tiếp trên máy. Mọi thứ chạy trong container.
+- Docker Desktop hoặc Docker Engine + Docker Compose v2
+- PowerShell nếu muốn dùng các script hỗ trợ trên Windows
 
----
+Để seed dữ liệu bằng `seed_data.ps1`, máy local cần thêm:
 
-## 🚀 Cài đặt & Chạy
+- `sqlite3` có trong `PATH`
 
-### 1. Clone dự án
+Không cần cài Python trên máy nếu chỉ chạy bằng Docker Compose.
 
-```bash
-git clone <repository-url>
-cd bookstore-microservice
-```
+## Chạy hệ thống bằng Docker Compose
 
-### 2. Build và khởi động toàn bộ hệ thống
+Từ thư mục gốc của repo:
 
 ```bash
 docker compose up --build
 ```
 
-Lần đầu sẽ mất **3–5 phút** để build 12 images. Các lần sau nhanh hơn.
-
-Khi thấy dòng `Watching for file changes with StatReloader` xuất hiện cho tất cả service là đã sẵn sàng.
-
-### 3. Truy cập
-
-| URL | Mô tả |
-|-----|-------|
-| http://localhost:8000 | **Dashboard** — trang quản lý chính |
-| http://localhost:8000/books/ | Quản lý sách |
-| http://localhost:8000/customers/ | Quản lý khách hàng |
-| http://localhost:8000/orders/ | Quản lý đơn hàng |
-| http://localhost:8000/staff-page/ | Quản lý nhân viên |
-| http://localhost:8000/payments-page/ | Lịch sử thanh toán |
-| http://localhost:8000/shipments-page/ | Vận chuyển |
-| http://localhost:8000/reviews-page/ | Đánh giá sách |
-| http://localhost:8000/health/ | Kiểm tra trạng thái các service |
-
----
-
-## 📡 API Endpoints
-
-Tất cả request đi qua API Gateway theo pattern:
-
-```
-http://localhost:8000/api/<resource>/
-http://localhost:8000/api/<resource>/<id>/
-```
-
-### Ví dụ
+Chạy nền:
 
 ```bash
-# Danh sách khách hàng
-GET http://localhost:8000/api/customers/
-
-# Tạo khách hàng mới (tự tạo giỏ hàng)
-POST http://localhost:8000/api/customers/
-Content-Type: application/json
-{"name": "Nguyễn Văn A", "email": "a@example.com"}
-
-# Xóa khách hàng
-DELETE http://localhost:8000/api/customers/1/
-
-# Danh sách sách
-GET http://localhost:8000/api/books/
-
-# Thêm sách
-POST http://localhost:8000/api/books/
-{"title": "Python Cơ Bản", "author": "Nguyễn B", "price": 150000, "stock": 10}
-
-# Tạo đơn hàng có sản phẩm
-POST http://localhost:8000/api/orders/
-{
-  "customer_id": 1,
-  "shipping_address": "123 Nguyễn Huệ, Q1, HCM",
-  "items": [
-    {"book_id": 1, "quantity": 2, "unit_price": 150000},
-    {"book_id": 3, "quantity": 1, "unit_price": 200000}
-  ]
-}
+docker compose up -d --build
 ```
 
-### Resources có sẵn
-
-| Resource | Endpoint |
-|----------|----------|
-| customers | `/api/customers/` |
-| books | `/api/books/` |
-| carts | `/api/carts/` |
-| staff | `/api/staff/` |
-| managers | `/api/managers/` |
-| categories | `/api/categories/` |
-| orders | `/api/orders/` |
-| shipments | `/api/shipments/` |
-| payments | `/api/payments/` |
-| reviews | `/api/reviews/` |
-| recommendations | `/api/recommendations/` |
-
----
-
-## 🛠️ Lệnh thường dùng
+Kiểm tra trạng thái:
 
 ```bash
-# Khởi động (background, không hiện log)
-docker compose up -d
-
-# Khởi động và xem log
-docker compose up
-
-# Dừng tất cả service
-docker compose down
-
-# Rebuild một service cụ thể (sau khi sửa code)
-docker compose up --build -d api-gateway
-docker compose up --build -d order-service
-
-# Xem log một service
-docker compose logs -f api-gateway
-docker compose logs -f order-service
-
-# Xem log tất cả
-docker compose logs -f
-
-# Kiểm tra trạng thái containers
 docker compose ps
-
-# Restart một service
-docker compose restart api-gateway
-
-# Xóa toàn bộ (kể cả dữ liệu)
-docker compose down -v
 ```
 
----
+Dừng hệ thống:
 
-## 📁 Cấu trúc thư mục
-
+```bash
+docker compose down
 ```
-bookstore-microservice/
+
+Lưu ý:
+
+- Mỗi container sẽ tự chạy `python manage.py migrate` khi khởi động.
+- SQLite của từng service đang được mount ra file `db.sqlite3` trong từng thư mục service để dữ liệu giữ lại giữa các lần restart container.
+
+## URL truy cập chính
+
+### Giao diện quản trị qua API Gateway
+
+| URL                                         | Mô tả                  |
+| ------------------------------------------- | ---------------------- |
+| `http://localhost:8888/`                    | Dashboard              |
+| `http://localhost:8888/books/`              | Quản lý sách           |
+| `http://localhost:8888/customers/`          | Quản lý khách hàng     |
+| `http://localhost:8888/orders/`             | Quản lý đơn hàng       |
+| `http://localhost:8888/staff-page/`         | Quản lý nhân viên      |
+| `http://localhost:8888/payments-page/`      | Quản lý thanh toán     |
+| `http://localhost:8888/shipments-page/`     | Quản lý vận chuyển     |
+| `http://localhost:8888/reviews-page/`       | Quản lý đánh giá       |
+| `http://localhost:8888/cart/<customer_id>/` | Xem giỏ hàng của khách |
+| `http://localhost:8888/health/`             | Health check tổng hợp  |
+
+### API qua Gateway
+
+Mẫu endpoint:
+
+```text
+http://localhost:8888/api/<resource>/
+http://localhost:8888/api/<resource>/<id>/
+```
+
+Danh sách resource đang được gateway proxy:
+
+- `customers`
+- `books`
+- `carts`
+- `staff`
+- `managers`
+- `categories`
+- `orders`
+- `shipments`
+- `payments`
+- `reviews`
+- `recommendations`
+
+Ví dụ:
+
+```bash
+curl http://localhost:8888/api/books/
+
+curl http://localhost:8888/api/customers/
+
+curl -X POST http://localhost:8888/api/customers/ \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Nguyen Van A","email":"a@example.com"}'
+
+curl -X POST http://localhost:8888/api/orders/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer_id": 1,
+    "shipping_address": "123 Nguyen Hue, Quan 1, TP.HCM",
+    "items": [
+      {"book_id": 1, "quantity": 1, "unit_price": 320000}
+    ]
+  }'
+```
+
+## Script hỗ trợ trong repo
+
+### `run_migrations.ps1`
+
+Script này dùng để tạo lại virtual environment và chạy migration cho một nhóm Django service trên máy local, không phụ thuộc Docker.
+
+Chạy bằng PowerShell:
+
+```powershell
+.\run_migrations.ps1
+```
+
+Phù hợp khi bạn cần sửa schema hoặc debug riêng từng service trong môi trường local.
+
+### `seed_data.ps1`
+
+Script này seed dữ liệu mẫu trực tiếp vào các file SQLite hiện có trong repo.
+
+Chạy bằng PowerShell:
+
+```powershell
+.\seed_data.ps1
+```
+
+Script hiện seed các nhóm dữ liệu sau:
+
+- Category
+- Book
+- Customer
+- Cart
+- Staff
+- Manager
+- Review
+- Order
+- Payment
+- Shipment
+
+Lưu ý:
+
+- Cần có `sqlite3` trong `PATH`.
+- Nên chạy sau khi DB đã được migrate.
+
+## Frontend React
+
+Thư mục `frontend` là một ứng dụng React dùng Vite.
+
+Nếu muốn chạy frontend:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## Cấu trúc thư mục chính
+
+```text
+microservice/
 ├── docker-compose.yml
+├── README.md
+├── run_migrations.ps1
+├── seed_data.ps1
 ├── api-gateway/
-│   └── api_gateway/
-│       ├── app/
-│       │   └── views.py          # Proxy logic + template views
-│       ├── templates/            # Giao diện web (HTML)
-│       │   ├── base.html         # Layout chung (sidebar)
-│       │   ├── dashboard.html
-│       │   ├── books.html
-│       │   ├── customers.html
-│       │   ├── orders.html
-│       │   ├── staff.html
-│       │   ├── payments.html
-│       │   ├── shipments.html
-│       │   ├── reviews.html
-│       │   └── cart.html
-│       └── api_gateway/
-│           └── urls.py
-├── customer-service/
 ├── book-service/
 ├── cart-service/
-├── staff-service/
-├── manager-service/
 ├── catalog-service/
-├── order-service/
-├── ship-service/
-├── pay-service/
 ├── comment-rate-service/
-└── recommender-ai-service/
+├── customer-service/
+├── frontend/
+├── manager-service/
+├── order-service/
+├── pay-service/
+├── recommender-ai-service/
+├── ship-service/
+└── staff-service/
 ```
-Mỗi service có cấu trúc Django chuẩn:
-```
-<name>-service/
+
+Mỗi backend service đều có cấu trúc Django tương tự:
+
+```text
+<service>/
 ├── Dockerfile
 ├── requirements.txt
-└── <name>_service/
+└── <django_project>/
     ├── manage.py
     ├── app/
-    │   ├── models.py
-    │   ├── serializers.py
-    │   ├── views.py
-    │   └── migrations/
-    └── <name>_service/
-        ├── settings.py
-        └── urls.py
+    └── <django_project>/
 ```
 
----
-
-## 🔄 Luồng hoạt động chính
+## Luồng nghiệp vụ chính
 
 ### Tạo khách hàng
-```
+
+```text
 POST /api/customers/
-    → customer-service: lưu Customer
-    → customer-service: gọi cart-service tạo Cart tương ứng
+-> customer-service tạo customer
+-> customer-service gọi cart-service để tạo cart mặc định
 ```
 
 ### Tạo đơn hàng
-```
+
+```text
 POST /api/orders/
-    → order-service: lưu Order + các OrderItem
-    → order-service: gọi pay-service tạo Payment
-    → order-service: gọi ship-service tạo Shipment
+-> order-service tạo order và order items
+-> order-service gọi pay-service để tạo payment
+-> order-service gọi ship-service để tạo shipment
 ```
 
----
+## Một số lệnh thường dùng
 
-## ⚠️ Lưu ý
+```bash
+docker compose logs -f api-gateway
+docker compose logs -f order-service
+docker compose restart api-gateway
+docker compose up --build -d api-gateway
+docker compose up --build -d order-service
+docker compose down -v
+```
 
-- **Dữ liệu** lưu trong SQLite bên trong mỗi container. Khi chạy `docker compose down -v` dữ liệu sẽ bị xóa.
-- **Port 8000** phải trống trên máy host trước khi chạy.
-- Nếu gặp lỗi port bị chiếm, đổi port trong `docker-compose.yml` (ví dụ `"8080:8000"`).
-- Formatter/linter có thể phá vỡ cú pháp JavaScript template literal trong các file `.html` — các file template đã dùng string concatenation thay thế để tránh vấn đề này.
+## Lưu ý vận hành
 
+- Nếu cổng `8888` bị chiếm, đổi mapping trong `docker-compose.yml`.
+- Dữ liệu SQLite được giữ trong các file `db.sqlite3` của từng service. Nếu xóa các file này hoặc mount volume khác, dữ liệu hiện tại sẽ mất.
+- `docker compose down -v` không xóa bind-mounted SQLite trong repo, nhưng vẫn có thể xóa các volume Docker khác nếu sau này dự án bổ sung volume named.

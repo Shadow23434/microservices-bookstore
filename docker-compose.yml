@@ -1,77 +1,79 @@
-# version: "3.9"
+# version: "3.9" # optional since v1.27.0
+
+name: microservice
 
 services:
   customer-service:
     build: ./customer-service
-    ports:
-      - "8001:8000"
+    volumes:
+      - ./customer-service/customer_service/db.sqlite3:/app/db.sqlite3
     environment:
-      - CART_SERVICE_URL=http://cart-service:8000
+      - CART_SERVICE_URL=http://cart-service:8888
     depends_on:
       - cart-service
 
   book-service:
     build: ./book-service
-    ports:
-      - "8002:8000"
+    volumes:
+      - ./book-service/book_service/db.sqlite3:/app/db.sqlite3
 
   cart-service:
     build: ./cart-service
-    ports:
-      - "8003:8000"
+    volumes:
+      - ./cart-service/cart_service/db.sqlite3:/app/db.sqlite3
     environment:
-      - BOOK_SERVICE_URL=http://book-service:8000
+      - BOOK_SERVICE_URL=http://book-service:8888
     depends_on:
       - book-service
 
   staff-service:
     build: ./staff-service
-    ports:
-      - "8004:8000"
+    volumes:
+      - ./staff-service/staff_service/db.sqlite3:/app/db.sqlite3
 
   manager-service:
     build: ./manager-service
-    ports:
-      - "8005:8000"
+    volumes:
+      - ./manager-service/manager_service/db.sqlite3:/app/db.sqlite3
 
   catalog-service:
     build: ./catalog-service
-    ports:
-      - "8006:8000"
+    volumes:
+      - ./catalog-service/catalog_service/db.sqlite3:/app/db.sqlite3
 
   order-service:
     build: ./order-service
-    ports:
-      - "8007:8000"
+    volumes:
+      - ./order-service/order_service/db.sqlite3:/app/db.sqlite3
     environment:
-      - PAY_SERVICE_URL=http://pay-service:8000
-      - SHIP_SERVICE_URL=http://ship-service:8000
+      - PAY_SERVICE_URL=http://pay-service:8888
+      - SHIP_SERVICE_URL=http://ship-service:8888
     depends_on:
       - pay-service
       - ship-service
 
   ship-service:
     build: ./ship-service
-    ports:
-      - "8008:8000"
+    volumes:
+      - ./ship-service/ship_service/db.sqlite3:/app/db.sqlite3
 
   pay-service:
     build: ./pay-service
-    ports:
-      - "8009:8000"
+    volumes:
+      - ./pay-service/pay_service/db.sqlite3:/app/db.sqlite3
 
   comment-rate-service:
     build: ./comment-rate-service
-    ports:
-      - "8010:8000"
+    volumes:
+      - ./comment-rate-service/comment_rate_service/db.sqlite3:/app/db.sqlite3
 
   recommender-ai-service:
     build: ./recommender-ai-service
-    ports:
-      - "8011:8000"
+    volumes:
+      - ./recommender-ai-service/recommender_ai_service/db.sqlite3:/app/db.sqlite3
     environment:
-      - BOOK_SERVICE_URL=http://book-service:8000
-      - COMMENT_RATE_SERVICE_URL=http://comment-rate-service:8000
+      - BOOK_SERVICE_URL=http://book-service:8888
+      - COMMENT_RATE_SERVICE_URL=http://comment-rate-service:8888
     depends_on:
       - book-service
       - comment-rate-service
@@ -79,19 +81,21 @@ services:
   api-gateway:
     build: ./api-gateway
     ports:
-      - "8000:8000"
+      - "8888:8888"
+    volumes:
+      - ./api-gateway/api_gateway/db.sqlite3:/app/db.sqlite3
     environment:
-      - CUSTOMER_SERVICE_URL=http://customer-service:8000
-      - BOOK_SERVICE_URL=http://book-service:8000
-      - CART_SERVICE_URL=http://cart-service:8000
-      - STAFF_SERVICE_URL=http://staff-service:8000
-      - MANAGER_SERVICE_URL=http://manager-service:8000
-      - CATALOG_SERVICE_URL=http://catalog-service:8000
-      - ORDER_SERVICE_URL=http://order-service:8000
-      - SHIP_SERVICE_URL=http://ship-service:8000
-      - PAY_SERVICE_URL=http://pay-service:8000
-      - COMMENT_RATE_SERVICE_URL=http://comment-rate-service:8000
-      - RECOMMENDER_SERVICE_URL=http://recommender-ai-service:8000
+      - CUSTOMER_SERVICE_URL=http://customer-service:8888
+      - BOOK_SERVICE_URL=http://book-service:8888
+      - CART_SERVICE_URL=http://cart-service:8888
+      - STAFF_SERVICE_URL=http://staff-service:8888
+      - MANAGER_SERVICE_URL=http://manager-service:8888
+      - CATALOG_SERVICE_URL=http://catalog-service:8888
+      - ORDER_SERVICE_URL=http://order-service:8888
+      - SHIP_SERVICE_URL=http://ship-service:8888
+      - PAY_SERVICE_URL=http://pay-service:8888
+      - COMMENT_RATE_SERVICE_URL=http://comment-rate-service:8888
+      - RECOMMENDER_SERVICE_URL=http://recommender-ai-service:8888
     depends_on:
       - customer-service
       - book-service
