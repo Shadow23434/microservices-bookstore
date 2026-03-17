@@ -1,32 +1,66 @@
 import { Link, useNavigate } from 'react-router-dom';
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import customerService from '../api/customerService';
 import Logo from '../components/Logo';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    const names = fullName.trim().split(' ');
-    const firstName = names[0] || 'New';
-    const lastName = names.slice(1).join(' ') || 'User';
+    setError('');
 
-    login({
-      firstName,
-      lastName,
-      email,
-      phone: ''
-    });
-    navigate('/');
+    if (password !== confirmPassword) {
+      setError('Mật khẩu xác nhận không khớp.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Gọi API tạo customer mới
+      const newCustomer: any = await customerService.createCustomer({
+        name: fullName,
+        email,
+        phone: phone || '',
+        address: address || '',
+      });
+
+      const names = fullName.trim().split(' ');
+      // Đăng nhập ngay sau khi tạo xong, lưu customer_id
+      login({
+        id: newCustomer.id,
+        firstName: names[0] || fullName,
+        lastName: names.slice(1).join(' ') || '',
+        email: newCustomer.email || email,
+        phone: newCustomer.phone || phone,
+        address: newCustomer.address || address,
+      });
+      navigate('/');
+    } catch (err: any) {
+      console.error('Register error:', err);
+      const errMsg = err?.response?.data;
+      if (errMsg?.email) {
+        setError('Email này đã được đăng ký. Vui lòng dùng email khác hoặc đăng nhập.');
+      } else {
+        setError('Đăng ký thất bại. Vui lòng kiểm tra kết nối và thử lại.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -73,6 +107,13 @@ export default function SignUp() {
                 <p className="text-slate-500 dark:text-slate-400">Join BookStore today and start your reading journey.</p>
               </div>
 
+              {error && (
+                <div className="mb-4 flex items-start gap-3 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400">
+                  <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm">{error}</p>
+                </div>
+              )}
+
               <form className="space-y-5" onSubmit={handleSignUp}>
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Full Name</label>
@@ -102,6 +143,17 @@ export default function SignUp() {
                   </div>
                 </div>
 
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Phone Number <span className="text-slate-400 font-normal">(optional)</span></label>
+                  <input
+                    type="tel"
+                    placeholder="Your phone number"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg py-3 px-4 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#d36d24] focus:border-transparent transition-all outline-none"
+                  />
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Password</label>
@@ -109,6 +161,9 @@ export default function SignUp() {
                       <input
                         type={showPassword ? "text" : "password"}
                         placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
                         className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg py-3 pl-4 pr-10 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#d36d24] focus:border-transparent transition-all outline-none"
                       />
                       <button
@@ -127,6 +182,9 @@ export default function SignUp() {
                       <input
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="Confirm your password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
                         className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg py-3 pl-4 pr-10 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#d36d24] focus:border-transparent transition-all outline-none"
                       />
                       <button
@@ -153,9 +211,15 @@ export default function SignUp() {
 
                 <button
                   type="submit"
-                  className="w-full bg-[#d36d24] hover:bg-[#d36d24]/90 text-white font-bold py-4 rounded-xl shadow-lg shadow-[#d36d24]/20 transition-all transform hover:-translate-y-0.5 active:translate-y-0"
+                  disabled={isLoading}
+                  className="w-full bg-[#d36d24] hover:bg-[#d36d24]/90 text-white font-bold py-4 rounded-xl shadow-lg shadow-[#d36d24]/20 transition-all transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  Create Account
+                  {isLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Đang đăng ký...
+                    </span>
+                  ) : 'Create Account'}
                 </button>
 
                 <p className="text-center text-sm text-slate-500 dark:text-slate-400 pt-4 md:hidden">

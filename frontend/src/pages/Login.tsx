@@ -1,30 +1,52 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import customerService from '../api/customerService';
 import Logo from '../components/Logo';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
-  const { login, user } = useAuth();
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (user && user.email === email) {
-      login(user);
-    } else {
-      login({
-        firstName: email.split('@')[0] || 'User',
-        lastName: '',
-        email,
-        phone: ''
-      });
+    setError('');
+    setIsLoading(true);
+
+    try {
+      // Gọi API lấy danh sách customers, tìm theo email
+      const customers = await customerService.getCustomers() as unknown as any[];
+      const found = customers.find(
+        (c: any) => c.email?.toLowerCase() === email.toLowerCase()
+      );
+
+      if (found) {
+        login({
+          id: found.id,
+          firstName: found.name?.split(' ')[0] || found.first_name || found.name || email.split('@')[0],
+          lastName: found.name?.split(' ').slice(1).join(' ') || found.last_name || '',
+          email: found.email,
+          phone: found.phone || '',
+          address: found.address || '',
+        });
+        const from = location.state?.from?.pathname || '/';
+        navigate(from, { replace: true });
+      } else {
+        setError('Email không tồn tại. Vui lòng đăng ký tài khoản mới.');
+      }
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError('Không thể kết nối đến server. Vui lòng kiểm tra backend đang chạy.');
+    } finally {
+      setIsLoading(false);
     }
-    const from = location.state?.from?.pathname || '/';
-    navigate(from, { replace: true });
   };
 
   return (
@@ -47,15 +69,23 @@ export default function Login() {
               <p className="text-slate-500 dark:text-slate-400">Discover your next favorite story</p>
             </div>
 
+            {/* Error Alert */}
+            {error && (
+              <div className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400">
+                <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                <p className="text-sm">{error}</p>
+              </div>
+            )}
+
             {/* Login Form */}
             <form className="space-y-5" onSubmit={handleSubmit}>
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Email or Username</label>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Email</label>
                 <input
-                  type="text"
+                  type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email or username"
+                  placeholder="Nhập địa chỉ email của bạn"
                   required
                   className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-slate-900 dark:text-white focus:border-[#d36d24] focus:ring-2 focus:ring-[#d36d24]/20 outline-none transition-all placeholder:text-slate-400"
                 />
@@ -69,6 +99,8 @@ export default function Login() {
                 <div className="relative flex items-center">
                   <input
                     type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
                     className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-slate-900 dark:text-white focus:border-[#d36d24] focus:ring-2 focus:ring-[#d36d24]/20 outline-none transition-all placeholder:text-slate-400 pr-10"
                   />
@@ -95,9 +127,15 @@ export default function Login() {
 
               <button
                 type="submit"
-                className="w-full rounded-lg bg-[#d36d24] py-3.5 text-center text-sm font-bold text-white shadow-lg shadow-[#d36d24]/30 hover:bg-[#d36d24]/90 transition-all active:scale-[0.98]"
+                disabled={isLoading}
+                className="w-full rounded-lg bg-[#d36d24] py-3.5 text-center text-sm font-bold text-white shadow-lg shadow-[#d36d24]/30 hover:bg-[#d36d24]/90 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                Sign In
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Đang đăng nhập...
+                  </span>
+                ) : 'Sign In'}
               </button>
             </form>
 
@@ -118,7 +156,7 @@ export default function Login() {
         </main>
 
         <footer className="mt-auto px-6 py-8 text-center border-t border-[#d36d24]/5">
-          <p className="text-xs text-slate-400"> 2026 BookStore. All rights reserved.</p>
+          <p className="text-xs text-slate-400">&copy; 2026 BookStore. All rights reserved.</p>
         </footer>
       </div>
     </div>

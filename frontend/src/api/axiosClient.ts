@@ -1,9 +1,9 @@
 /// <reference types="vite/client" />
 import axios from 'axios';
 
+// Tất cả request đi qua API Gateway tại localhost:8888
 const axiosClient = axios.create({
-  // Base URL trống để ăn theo cấu hình proxy của Vite hoặc domain hiện tại
-  baseURL: import.meta.env.VITE_API_BASE_URL || '', 
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8888',
   headers: {
     'Content-Type': 'application/json',
   },

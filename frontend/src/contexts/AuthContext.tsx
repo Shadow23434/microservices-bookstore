@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useState } from 'react';
 
 export interface UserProfile {
+  id?: number;
   firstName: string;
   lastName: string;
   email: string;
   phone?: string;
+  address?: string;
 }
 
 interface AuthContextType {
@@ -47,6 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     localStorage.removeItem('isAuthenticated');
     localStorage.removeItem('user');
+    localStorage.removeItem('access_token');
   };
 
   const updateUser = (userData: UserProfile) => {

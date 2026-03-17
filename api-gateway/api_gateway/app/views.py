@@ -108,7 +108,7 @@ def _proxy(request, service_url, path):
 class GatewayView(APIView):
     def dispatch(self, request, resource, path="", *args, **kwargs):
         if resource not in SERVICES:
-            return Response(
+            return JsonResponse(
                 {"error": f"Unknown resource: {resource}"},
                 status=status.HTTP_404_NOT_FOUND,
             )

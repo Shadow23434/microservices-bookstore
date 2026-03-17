@@ -1,42 +1,81 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { CheckCircle2, CreditCard, Truck, ChevronRight, Trash2, Plus, Minus, ShoppingCart } from 'lucide-react';
+import { CheckCircle2, CreditCard, Truck, ChevronRight, Trash2, Plus, Minus, ShoppingCart, Loader2 } from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
 import { useOrders } from '../contexts/OrderContext';
+import { useAuth } from '../contexts/AuthContext';
+import orderService from '../api/orderService';
 
 export default function Checkout() {
   const navigate = useNavigate();
   const { cartItems, cartTotal, updateQuantity, removeFromCart, clearCart } = useCart();
   const { addOrder } = useOrders();
+  const { user } = useAuth();
   const [step, setStep] = useState(0); // 0: Cart, 1: Shipping, 2: Payment
   const [paymentMethod, setPaymentMethod] = useState('credit_card');
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [shippingAddress, setShippingAddress] = useState(user?.address || '');
 
   const subtotal = cartTotal;
   const shipping = 5.99;
   const tax = subtotal * 0.08;
   const total = subtotal + shipping + tax;
 
-  const handlePlaceOrder = (e: React.FormEvent) => {
+  const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const newOrder = {
-      id: `ORD-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-      date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
-      items: [...cartItems],
-      subtotal,
-      shipping,
-      tax,
-      total,
-      status: 'Processing' as const
-    };
-    
-    addOrder(newOrder);
-    clearCart();
-    
-    if (paymentMethod === 'qr_code') {
-      navigate('/scan-to-pay');
-    } else {
+    setIsPlacingOrder(true);
+
+    try {
+      // Gọi API thật để tạo order trong backend
+      // Order service tự động tạo Payment và Shipment
+      const orderData = {
+        customer_id: user?.id || 1,
+        shipping_address: shippingAddress || '123 Default St',
+        payment_method: paymentMethod,
+        items: cartItems.map((item: any) => ({
+          book_id: item.id,
+          quantity: item.quantity,
+          unit_price: item.price,
+        })),
+      };
+
+      const createdOrder: any = await orderService.createOrder(orderData);
+
+      // Cũng lưu vào OrderContext local state
+      addOrder({
+        id: createdOrder?.id || `ORD-${Date.now()}`,
+        date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+        items: [...cartItems],
+        subtotal,
+        shipping,
+        tax,
+        total,
+        status: 'Processing' as const
+      });
+      clearCart();
+
+      if (paymentMethod === 'qr_code') {
+        navigate('/scan-to-pay');
+      } else {
+        navigate('/order-success');
+      }
+    } catch (err) {
+      console.error('Failed to place order:', err);
+      // Fallback local-only in case API fails
+      addOrder({
+        id: `ORD-${Date.now()}`,
+        date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+        items: [...cartItems],
+        subtotal,
+        shipping,
+        tax,
+        total,
+        status: 'Processing' as const
+      });
+      clearCart();
       navigate('/order-success');
+    } finally {
+      setIsPlacingOrder(false);
     }
   };
 
@@ -166,7 +205,13 @@ export default function Checkout() {
                     </div>
                     <div className="sm:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address</label>
-                      <input type="text" className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" required />
+                      <input 
+                        type="text" 
+                        value={shippingAddress}
+                        onChange={(e) => setShippingAddress(e.target.value)}
+                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" 
+                        required 
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">City</label>

@@ -208,6 +208,72 @@ npm install
 npm run dev
 ```
 
+## Guide chạy giao diện
+
+Bạn có thể chạy giao diện theo 2 cách, tùy mục đích sử dụng.
+
+### Cách 1: Chạy giao diện Django templates (nhanh nhất)
+
+Phù hợp để kiểm thử nhanh toàn bộ hệ thống qua API Gateway.
+
+1. Từ thư mục gốc repo, chạy backend bằng Docker Compose:
+
+```bash
+docker compose up -d --build
+```
+
+2. Chờ các service lên xong rồi mở:
+
+- `http://localhost:8888/` (dashboard)
+- `http://localhost:8888/books/`
+- `http://localhost:8888/customers/`
+- `http://localhost:8888/orders/`
+
+3. Xem log nếu trang chưa lên:
+
+```bash
+docker compose logs -f api-gateway
+```
+
+### Cách 2: Chạy giao diện React/Vite
+
+Phù hợp khi phát triển UI hiện đại ở thư mục `frontend`.
+
+1. Đảm bảo backend (API Gateway) đang chạy ở `http://localhost:8888`.
+
+2. Mở terminal mới và chạy frontend:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+3. Mở URL Vite hiển thị trên terminal (thường là `http://localhost:5173`).
+
+### Luồng chạy khuyến nghị khi dev UI
+
+1. Chạy backend trước:
+
+```bash
+docker compose up -d --build
+```
+
+2. Chạy frontend React:
+
+```bash
+cd frontend
+npm run dev
+```
+
+3. Khi xong việc:
+
+```bash
+docker compose down
+```
+
+> Nếu lỗi API/CORS, kiểm tra lại API base URL trong frontend và đảm bảo `api-gateway` đang healthy.
+
 ## Cấu trúc thư mục chính
 
 ```text

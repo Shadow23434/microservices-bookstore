@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { User, Package, Clock, Star, Settings, LogOut, Edit2, Sun, Moon, Monitor, CheckCircle2 } from 'lucide-react';
+import { User, Package, Clock, Star, Settings, LogOut, Edit2, Sun, Moon, Monitor, CheckCircle2, Loader2 } from 'lucide-react';
 import { useOrders } from '../contexts/OrderContext';
 import { useReviews } from '../contexts/ReviewContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
+import customerService from '../api/customerService';
+import orderService from '../api/orderService';
+import reviewService from '../api/reviewService';
 
 export default function Account() {
   const [activeTab, setActiveTab] = useState('profile');
-  const { orders } = useOrders();
-  const { getUserReviews } = useReviews();
   const { theme, setTheme } = useTheme();
   const { user, updateUser, logout } = useAuth();
   const navigate = useNavigate();
@@ -37,31 +38,64 @@ export default function Account() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
 
+  // API State
+  const [apiOrders, setApiOrders] = useState<any[]>([]);
+  const [apiReviews, setApiReviews] = useState<any[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const loadData = async () => {
+      setIsLoadingData(true);
+      try {
+        const [ordersData, reviewsData] = await Promise.all([
+          orderService.getOrdersByCustomer(user.id) as unknown as any[],
+          reviewService.getReviews({ customer_id: user.id }) as unknown as any[],
+        ]);
+        setApiOrders(Array.isArray(ordersData) ? ordersData : []);
+        setApiReviews(Array.isArray(reviewsData) ? reviewsData : []);
+      } catch (err) {
+        console.error('Failed to load user data:', err);
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+    if (activeTab === 'orders' || activeTab === 'shipments' || activeTab === 'reviews') {
+      loadData();
+    }
+  }, [user?.id, activeTab]);
+
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setProfile(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     setSaveMessage('');
     
-    // Simulate API call
-    setTimeout(() => {
-      updateUser(profile);
-      setIsSaving(false);
+    try {
+      if (user?.id) {
+        await customerService.updateCustomer(user.id, {
+          name: `${profile.firstName} ${profile.lastName}`.trim(),
+          email: profile.email,
+          phone: profile.phone,
+        });
+      }
+      updateUser({ ...user, ...profile } as any);
       setSaveMessage('Profile updated successfully!');
-      
-      // Clear message after 3 seconds
-      setTimeout(() => {
-        setSaveMessage('');
-      }, 3000);
-    }, 800);
+    } catch (err) {
+      console.error('Failed to update profile:', err);
+      setSaveMessage('Failed to update profile. Please try again.');
+    } finally {
+      setIsSaving(false);
+      setTimeout(() => setSaveMessage(''), 3000);
+    }
   };
   
-  const activeShipments = orders.filter(o => o.status !== 'Delivered');
-  const userReviews = getUserReviews('user-1'); // Mock user ID
+  const activeShipments = apiOrders.filter(o => o.status !== 'Delivered' && o.status !== 'completed');
+  const userReviews = apiReviews;
 
   return (
     <div className="bg-gray-50 dark:bg-gray-950 min-h-screen py-8 transition-colors duration-200">
@@ -264,7 +298,11 @@ export default function Account() {
             {activeTab === 'orders' && (
               <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-8 transition-colors">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Order History</h2>
-                {orders.length === 0 ? (
+                {isLoadingData ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+                  </div>
+                ) : apiOrders.length === 0 ? (
                   <p className="text-gray-500 dark:text-gray-400">You have no order history.</p>
                 ) : (
                   <div className="overflow-x-auto">
@@ -279,19 +317,21 @@ export default function Account() {
                         </tr>
                       </thead>
                       <tbody className="text-sm">
-                        {orders.map(order => (
+                        {apiOrders.map(order => (
                           <tr key={order.id} className="border-b border-gray-100 dark:border-gray-800">
                             <td className="py-4 font-medium text-gray-900 dark:text-white">#{order.id}</td>
-                            <td className="py-4 text-gray-600 dark:text-gray-400">{order.date}</td>
-                            <td className="py-4 text-gray-600 dark:text-gray-400">{order.items.reduce((acc, item) => acc + item.quantity, 0)} items</td>
-                            <td className="py-4 font-medium text-gray-900 dark:text-white">${order.total.toFixed(2)}</td>
+                            <td className="py-4 text-gray-600 dark:text-gray-400">
+                              {order.created_at ? new Date(order.created_at).toLocaleDateString() : order.date}
+                            </td>
+                            <td className="py-4 text-gray-600 dark:text-gray-400">{order.items ? order.items.reduce((acc: any, item: any) => acc + (item.quantity || 1), 0) : 0} items</td>
+                            <td className="py-4 font-medium text-gray-900 dark:text-white">${parseFloat(order.total_amount || order.total || 0).toFixed(2)}</td>
                             <td className="py-4">
                               <span className={`text-xs px-2 py-1 rounded-full ${
-                                order.status === 'Delivered' 
+                                order.status === 'Delivered' || order.status === 'completed'
                                   ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-400' 
                                   : 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-400'
                               }`}>
-                                {order.status}
+                                {order.status || 'Pending'}
                               </span>
                             </td>
                           </tr>
@@ -307,22 +347,28 @@ export default function Account() {
             {activeTab === 'reviews' && (
               <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 p-8 transition-colors">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">My Reviews</h2>
-                {userReviews.length === 0 ? (
+                {isLoadingData ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+                  </div>
+                ) : userReviews.length === 0 ? (
                   <div className="text-center py-12">
                     <p className="text-gray-500 dark:text-gray-400 mb-4">You haven't written any reviews yet.</p>
                     <Link to="/catalog" className="text-indigo-600 hover:text-indigo-500 font-medium">Browse Books to Review</Link>
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    {userReviews.map(review => (
+                    {userReviews.map((review: any) => (
                       <div key={review.id} className="border border-gray-100 dark:border-gray-800 rounded-xl p-6">
                         <div className="flex gap-4">
-                          <img src={review.bookImage} alt={review.bookTitle} className="w-16 h-24 object-cover rounded shadow-sm" referrerPolicy="no-referrer" />
+                          <img src={review.bookImage || `https://picsum.photos/seed/book${review.book_id}/100/150`} alt={review.bookTitle || `Book ${review.book_id}`} className="w-16 h-24 object-cover rounded shadow-sm" referrerPolicy="no-referrer" />
                           <div className="flex-1">
                             <div className="flex justify-between items-start">
                               <div>
-                                <Link to={`/book/${review.bookId}`} className="font-bold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 text-lg">{review.bookTitle}</Link>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{review.date}</p>
+                                <Link to={`/book/${review.book_id || review.bookId}`} className="font-bold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 text-lg">{review.bookTitle || `Book ID: ${review.book_id}`}</Link>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                                  {review.created_at ? new Date(review.created_at).toLocaleDateString() : review.date}
+                                </p>
                               </div>
                               <div className="flex text-yellow-400">
                                 {[...Array(5)].map((_, i) => (
@@ -330,7 +376,7 @@ export default function Account() {
                                 ))}
                               </div>
                             </div>
-                            <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">{review.content}</p>
+                            <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">{review.comment || review.content}</p>
                           </div>
                         </div>
                       </div>
