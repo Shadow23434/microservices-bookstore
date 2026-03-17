@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Đơn hàng{% endblock %}
-{% block page_title %}📦 Quản lý Đơn hàng{% endblock %}
+{% block page_title %}<i class="bi bi-box-seam"></i> Quản lý Đơn hàng{% endblock %}
 
 {% block content %}
 <div class="form-card">
-  <h3>➕ Tạo đơn hàng mới</h3>
+  <h3><i class="bi bi-plus-circle"></i> Tạo đơn hàng mới</h3>
 
   <div class="form-row">
     <div class="form-group" style="flex:1">
@@ -18,7 +18,7 @@
   </div>
 
   <div style="border-top:1px solid #eee;margin-top:12px;padding-top:16px">
-    <h4 style="margin:0 0 10px;font-size:14px;color:#555">📚 Thêm sản phẩm vào đơn</h4>
+    <h4 style="margin:0 0 10px;font-size:14px;color:#555"><i class="bi bi-book-half"></i> Thêm sản phẩm vào đơn</h4>
     <div class="form-row" style="align-items:flex-end">
       <div class="form-group" style="flex:3">
         <label>Chọn sách</label>
@@ -29,7 +29,7 @@
         <input id="f-qty" type="number" value="1" min="1">
       </div>
       <div class="form-group" style="flex:0;padding-bottom:0">
-        <button class="btn btn-secondary" onclick="addItem()" style="white-space:nowrap">➕ Thêm SP</button>
+        <button class="btn btn-secondary" onclick="addItem()" style="white-space:nowrap"><i class="bi bi-plus-circle"></i> Thêm SP</button>
       </div>
     </div>
 
@@ -53,7 +53,7 @@
   </div>
 
   <div style="margin-top:16px">
-    <button class="btn btn-primary" onclick="submitOrder()">🛒 Tạo đơn hàng</button>
+    <button class="btn btn-primary" onclick="submitOrder()"><i class="bi bi-cart"></i> Tạo đơn hàng</button>
   </div>
 </div>
 
