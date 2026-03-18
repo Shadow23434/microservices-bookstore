@@ -10,7 +10,7 @@
     <div class="form-group"><label>Tác giả</label><input id="f-author" placeholder="Nguyễn Văn A"></div>
     <div class="form-group"><label>Giá (đ)</label><input id="f-price" type="number" placeholder="150000"></div>
     <div class="form-group"><label>Tồn kho</label><input id="f-stock" type="number" placeholder="10"></div>
-    <div class="form-group"><label>URL ảnh bìa</label><input id="f-imageUrl" placeholder="https://covers.openlibrary.org/...jpg"></div>
+    <div class="form-group"><label>URL ảnh bìa</label><input id="f-image" placeholder="https://covers.openlibrary.org/...jpg"></div>
   </div>
   <button class="btn btn-primary" onclick="addBook()"><i class="bi bi-plus-circle"></i> Thêm sách</button>
 </div>
@@ -36,10 +36,10 @@
     <div class="form-group" style="margin-bottom:12px;"><label>Tác giả</label><input id="edit-author"></div>
     <div class="form-group" style="margin-bottom:12px;"><label>Giá (đ)</label><input id="edit-price" type="number"></div>
     <div class="form-group" style="margin-bottom:12px;"><label>Tồn kho</label><input id="edit-stock" type="number"></div>
-    <div class="form-group" style="margin-bottom:12px;"><label>URL ảnh bìa</label><input id="edit-imageUrl"></div>
+    <div class="form-group" style="margin-bottom:12px;"><label>URL ảnh bìa</label><input id="edit-image"></div>
     <div class="modal-footer">
       <button class="btn" style="background:#e5e7eb;color:#374151" onclick="closeEditModal()">Hủy</button>
-      <button class="btn btn-primary" onclick="saveEditBook()">Lưu thay đổi</button>
+      <button class="btn btn-primary" onclick="saveEditBook()">Lưu thay $ổi</button>
     </div>
   </div>
 </div>
@@ -53,7 +53,7 @@ function loadBooks() {
     allBooks = Array.isArray(data) ? data : [];
     document.getElementById('book-count').textContent = allBooks.length;
     renderBooks(allBooks);
-  }).catch(() => showToast('Không tải được danh sách sách', false));
+  }).catch(() => showToast('Không tải $ược danh sách sách', false));
 }
 
 function renderBooks(books) {
@@ -65,8 +65,8 @@ function renderBooks(books) {
   tbody.innerHTML = books.map(b => {
     const price = Number(b.price).toLocaleString('vi-VN');
     const stockTag = b.stock > 0 ? 'tag-blue' : 'tag-red';
-    const imageCell = b.imageUrl
-      ? '<img src="' + b.imageUrl + '" alt="' + b.title + '" style="width:56px;height:84px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;">'
+    const imageCell = b.image
+      ? '<img src="' + b.image + '" alt="' + b.title + '" style="width:56px;height:84px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;">'
       : '<div style="width:56px;height:84px;border-radius:8px;border:1px dashed #d1d5db;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:12px;">No image</div>';
     return '<tr>' +
       '<td style="color:#888">#' + b.id + '</td>' +
@@ -94,17 +94,17 @@ function addBook() {
     author: document.getElementById('f-author').value.trim(),
     price: document.getElementById('f-price').value,
     stock: document.getElementById('f-stock').value,
-    imageUrl: document.getElementById('f-imageUrl').value.trim(),
+    image: document.getElementById('f-image').value.trim(),
   };
   if (!body.title || !body.author || !body.price || !body.stock) {
-    showToast('Vui lòng điền đầy đủ thông tin', false); return;
+    showToast('Vui lòng $iền $ầy $ủ thông tin', false); return;
   }
   fetch('/api/books/', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)})
     .then(r => { if (!r.ok) return r.json().then(e => { throw e; }); return r.json(); })
     .then(() => {
       showToast(' Thêm sách thành công!');
       loadBooks();
-      ['f-title', 'f-author', 'f-price', 'f-stock', 'f-imageUrl'].forEach(id => document.getElementById(id).value = '');
+      ['f-title', 'f-author', 'f-price', 'f-stock', 'f-image'].forEach(id => document.getElementById(id).value = '');
     })
     .catch(e => showToast('Lỗi: ' + JSON.stringify(e), false));
 }
@@ -122,7 +122,7 @@ function editBook(id) {
   document.getElementById('edit-author').value = book.author || '';
   document.getElementById('edit-price').value = book.price || '';
   document.getElementById('edit-stock').value = book.stock || '';
-  document.getElementById('edit-imageUrl').value = book.imageUrl || '';
+  document.getElementById('edit-image').value = book.image || '';
   document.getElementById('editBookModal').classList.add('show');
 }
 
@@ -138,11 +138,11 @@ function saveEditBook() {
     author: document.getElementById('edit-author').value.trim(),
     price: document.getElementById('edit-price').value,
     stock: document.getElementById('edit-stock').value,
-    imageUrl: document.getElementById('edit-imageUrl').value.trim(),
+    image: document.getElementById('edit-image').value.trim(),
   };
 
   if (!body.title || !body.author || !body.price || !body.stock) {
-    showToast('Vui lòng điền đầy đủ thông tin', false);
+    showToast('Vui lòng $iền $ầy $ủ thông tin', false);
     return;
   }
 

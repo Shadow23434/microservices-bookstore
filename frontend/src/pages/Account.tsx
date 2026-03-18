@@ -8,6 +8,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import customerService from '../api/customerService';
 import orderService from '../api/orderService';
 import reviewService from '../api/reviewService';
+import bookService from '../api/bookService';
 
 export default function Account() {
   const [activeTab, setActiveTab] = useState('profile');
@@ -48,12 +49,29 @@ export default function Account() {
     const loadData = async () => {
       setIsLoadingData(true);
       try {
-        const [ordersData, reviewsData] = await Promise.all([
+        const [ordersData, reviewsData, booksData] = await Promise.all([
           orderService.getOrdersByCustomer(user.id) as unknown as any[],
           reviewService.getReviews({ customer_id: user.id }) as unknown as any[],
+          bookService.getAllBooks() as unknown as any[]
         ]);
+        
+        let booksList = Array.isArray(booksData) ? booksData : [];
+        if (booksData && typeof booksData === 'object' && Array.isArray((booksData as any).results)) {
+            booksList = (booksData as any).results;
+        }
+
+        const validReviews = Array.isArray(reviewsData) ? reviewsData : [];
+        const enrichedReviews = validReviews.map(r => {
+            const bookId = r.book_id || r.bookId;
+            const book = booksList.find((b: any) => b.id === bookId || b.id == bookId);
+            if (book) {
+                return { ...r, bookTitle: book.title, bookAuthor: book.author, bookImage: book.image };
+            }
+            return r;
+        });
+
         setApiOrders(Array.isArray(ordersData) ? ordersData : []);
-        setApiReviews(Array.isArray(reviewsData) ? reviewsData : []);
+        setApiReviews(enrichedReviews);
       } catch (err) {
         console.error('Failed to load user data:', err);
       } finally {
@@ -365,7 +383,10 @@ export default function Account() {
                           <div className="flex-1">
                             <div className="flex justify-between items-start">
                               <div>
-                                <Link to={`/book/${review.book_id || review.bookId}`} className="font-bold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 text-lg">{review.bookTitle || `Book ID: ${review.book_id}`}</Link>
+                                  <Link to={`/book/${review.book_id || review.bookId}`} className="font-bold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 text-lg">
+                                    {review.bookTitle || `Book ID: ${review.book_id}`}
+                                    {review.bookAuthor && <span className="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">by {review.bookAuthor}</span>}
+                                  </Link>
                                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
                                   {review.created_at ? new Date(review.created_at).toLocaleDateString() : review.date}
                                 </p>

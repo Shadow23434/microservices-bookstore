@@ -54,7 +54,7 @@ export default function SignUp() {
       console.error('Register error:', err);
       const errMsg = err?.response?.data;
       if (errMsg?.email) {
-        setError('Email này đã được đăng ký. Vui lòng dùng email khác hoặc đăng nhập.');
+        setError('Email này $ã $ược $ăng ký. Vui lòng dùng email khác hoặc $ăng nhập.');
       } else {
         setError('Đăng ký thất bại. Vui lòng kiểm tra kết nối và thử lại.');
       }
@@ -217,7 +217,7 @@ export default function SignUp() {
                   {isLoading ? (
                     <span className="flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Đang đăng ký...
+                      Đang $ăng ký...
                     </span>
                   ) : 'Create Account'}
                 </button>

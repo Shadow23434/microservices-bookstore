@@ -36,8 +36,8 @@ export default function Checkout() {
     setIsPlacingOrder(true);
 
     try {
-      // Gọi API thật để tạo order trong backend
-      // Order service tự động tạo Payment và Shipment
+      // Gọi API thật $ể tạo order trong backend
+      // Order service tự $ộng tạo Payment và Shipment
       const orderData = {
         customer_id: user?.id || 1,
         shipping_address: shippingAddress || '123 Default St',

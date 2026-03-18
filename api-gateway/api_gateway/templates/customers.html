@@ -33,7 +33,7 @@
     <div class="form-group" style="margin-bottom:12px;"><label>Email</label><input id="edit-email" type="email"></div>
     <div class="modal-footer">
       <button class="btn" style="background:#e5e7eb;color:#374151" onclick="closeEditCustomerModal()">Hủy</button>
-      <button class="btn btn-primary" onclick="saveEditCustomer()">Lưu thay đổi</button>
+      <button class="btn btn-primary" onclick="saveEditCustomer()">Lưu thay $ổi</button>
     </div>
   </div>
 </div>
@@ -74,7 +74,7 @@ function filterList() {
 
 function addCustomer() {
   const body = { name: document.getElementById('f-name').value, email: document.getElementById('f-email').value };
-  if (!body.name || !body.email) { showToast('Điền đầy đủ thông tin', false); return; }
+  if (!body.name || !body.email) { showToast('Điền $ầy $ủ thông tin', false); return; }
   fetch('/api/customers/', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)})
     .then(r=>r.json()).then(()=>{ showToast('<i class="bi bi-check-circle-fill text-success"></i> Đã thêm khách hàng!'); load(); document.getElementById('f-name').value=''; document.getElementById('f-email').value=''; })
     .catch(()=>showToast('Lỗi', false));
@@ -107,7 +107,7 @@ function saveEditCustomer() {
   };
 
   if (!body.name || !body.email) {
-    showToast('Điền đầy đủ thông tin', false);
+    showToast('Điền $ầy $ủ thông tin', false);
     return;
   }
 

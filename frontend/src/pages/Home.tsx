@@ -77,7 +77,7 @@ export default function Home() {
     setRecommendations([]);
     try {
       if (user?.id) {
-        // Gọi API recommender thật nếu user đã đăng nhập
+        // Gọi API recommender thật nếu user $ã $ăng nhập
         const recs = await recommenderService.getRecommendations(user.id) as unknown as any[];
         setRecommendations(Array.isArray(recs) ? recs.slice(0, 3) : []);
       } else {

@@ -39,11 +39,11 @@ export default function Login() {
         const from = location.state?.from?.pathname || '/';
         navigate(from, { replace: true });
       } else {
-        setError('Email không tồn tại. Vui lòng đăng ký tài khoản mới.');
+        setError('Email không tồn tại. Vui lòng $ăng ký tài khoản mới.');
       }
     } catch (err: any) {
       console.error('Login error:', err);
-      setError('Không thể kết nối đến server. Vui lòng kiểm tra backend đang chạy.');
+      setError('Không thể kết nối $ến server. Vui lòng kiểm tra backend $ang chạy.');
     } finally {
       setIsLoading(false);
     }
@@ -85,7 +85,7 @@ export default function Login() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Nhập địa chỉ email của bạn"
+                  placeholder="Nhập $ịa chỉ email của bạn"
                   required
                   className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-slate-900 dark:text-white focus:border-[#d36d24] focus:ring-2 focus:ring-[#d36d24]/20 outline-none transition-all placeholder:text-slate-400"
                 />
@@ -133,7 +133,7 @@ export default function Login() {
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Đang đăng nhập...
+                    Đang $ăng nhập...
                   </span>
                 ) : 'Sign In'}
               </button>

@@ -13,7 +13,7 @@ const reviewService = {
   updateReview: (id: number, data: any) => axiosClient.put(`/api/reviews/${id}/`, data),
   // Xóa review
   deleteReview: (id: number) => axiosClient.delete(`/api/reviews/${id}/`),
-  // Lấy điểm trung bình và tổng số review của 1 cuốn sách
+  // Lấy $iểm trung bình và tổng số review của 1 cuốn sách
   getBookRating: (bookId: number) =>
     axiosClient.get(`/api/reviews/book/${bookId}/rating/`),
 };

@@ -9,7 +9,7 @@ import axiosClient from './axiosClient';
 const authService = {
   // Đăng ký tài khoản mới (tạo customer)
   register: (data: any) => axiosClient.post('/api/customers/', data),
-  // Lấy danh sách customer để tìm theo email (không có endpoint login thật)
+  // Lấy danh sách customer $ể tìm theo email (không có endpoint login thật)
   getCustomers: () => axiosClient.get('/api/customers/'),
   // Lấy thông tin profile của customer
   getProfile: (id: number) => axiosClient.get(`/api/customers/${id}/`),
