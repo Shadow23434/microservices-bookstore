@@ -45,7 +45,7 @@
         <tbody id="items-list"></tbody>
         <tfoot><tr style="background:#f0fdf4">
           <td colspan="3" style="padding:10px 12px;text-align:right;font-weight:600">Tổng cộng:</td>
-          <td style="padding:10px 12px;text-align:right;font-weight:700;color:#16a34a;font-size:15px" id="order-total">0 đ</td>
+          <td style="padding:10px 12px;text-align:right;font-weight:700;color:#16a34a;font-size:15px" id="order-total">0 $</td>
           <td></td>
         </tr></tfoot>
       </table>
@@ -98,7 +98,7 @@ function loadBooks() {
     books.forEach(function(b) {
       var opt = document.createElement('option');
       opt.value = b.id;
-      opt.textContent = b.title + '  —  ' + Number(b.price).toLocaleString('vi-VN') + ' đ';
+      opt.textContent = b.title + '  —  ' + Number(b.price).toLocaleString('vi-VN') + ' $';
       sel.appendChild(opt);
     });
   });
@@ -129,7 +129,7 @@ function removeItem(bookId) {
 function renderItems() {
   var section = document.getElementById('items-section');
   var tbody = document.getElementById('items-list');
-  if (!orderItems.length) { section.style.display = 'none'; tbody.innerHTML = ''; document.getElementById('order-total').textContent = '0 đ'; return; }
+  if (!orderItems.length) { section.style.display = 'none'; tbody.innerHTML = ''; document.getElementById('order-total').textContent = '0 $'; return; }
   section.style.display = 'block';
   var total = 0;
   tbody.innerHTML = orderItems.map(function(item) {
@@ -138,12 +138,12 @@ function renderItems() {
     return '<tr>' +
       '<td style="padding:8px 12px">' + item.book_title + '</td>' +
       '<td style="padding:8px 12px;text-align:center">' + item.quantity + '</td>' +
-      '<td style="padding:8px 12px;text-align:right">' + Number(item.unit_price).toLocaleString('vi-VN') + ' đ</td>' +
-      '<td style="padding:8px 12px;text-align:right;font-weight:600">' + Number(sub).toLocaleString('vi-VN') + ' đ</td>' +
+      '<td style="padding:8px 12px;text-align:right">' + Number(item.unit_price).toLocaleString('vi-VN') + ' $</td>' +
+      '<td style="padding:8px 12px;text-align:right;font-weight:600">' + Number(sub).toLocaleString('vi-VN') + ' $</td>' +
       '<td style="padding:8px 12px;text-align:center"><button class="btn btn-danger btn-sm" onclick="removeItem(' + item.book_id + ')">✕</button></td>' +
       '</tr>';
   }).join('');
-  document.getElementById('order-total').textContent = Number(total).toLocaleString('vi-VN') + ' đ';
+  document.getElementById('order-total').textContent = Number(total).toLocaleString('vi-VN') + ' $';
 }
 
 function load() {
@@ -162,7 +162,7 @@ function load() {
         '<td style="color:#888">#' + o.id + '</td>' +
         '<td>' + custName + '</td>' +
         '<td style="text-align:center"><span class="tag tag-blue">' + itemCount + '</span></td>' +
-        '<td><span class="tag tag-green">' + Number(o.total_amount||0).toLocaleString('vi-VN') + ' đ</span></td>' +
+        '<td><span class="tag tag-green">' + Number(o.total_amount||0).toLocaleString('vi-VN') + ' $</span></td>' +
         '<td style="font-size:13px;color:#555">' + (o.shipping_address||'—') + '</td>' +
         '<td><span class="tag ' + cls + '">' + st + '</span></td>' +
         '<td style="font-size:13px;color:#888">' + date + '</td>' +

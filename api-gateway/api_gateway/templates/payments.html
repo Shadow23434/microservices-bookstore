@@ -24,7 +24,7 @@ fetch('/api/payments/').then(r=>r.json()).then(data=>{
       <td style="color:#888">#${p.id}</td>
       <td>ĐH #${p.order_id}</td>
       <td>KH #${p.customer_id}</td>
-      <td><span class="tag tag-green">${Number(p.amount||0).toLocaleString('vi-VN')} đ</span></td>
+      <td><span class="tag tag-green">${Number(p.amount||0).toLocaleString('vi-VN')} $</span></td>
       <td><span class="tag tag-blue">${p.method||'—'}</span></td>
       <td><span class="tag ${stMap[st]||'tag-blue'}">${st}</span></td>
       <td style="font-size:13px;color:#888">${date}</td>

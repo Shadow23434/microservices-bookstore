@@ -39,7 +39,7 @@ export default function Catalog() {
         setCategories(categoriesData || []);
       } catch (err) {
         console.error('Failed to load catalog data:', err);
-        setError('Không thể tải dữ liệu. Vui lòng kiểm tra kết nối backend.');
+        setError('Failed to load catalog data.');
         setBooks([]);
       } finally {
         setIsLoading(false);
@@ -114,7 +114,7 @@ export default function Catalog() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 flex justify-center">
         <div className="flex flex-col items-center gap-4 text-gray-500 dark:text-gray-400">
           <Loader2 className="h-12 w-12 animate-spin text-indigo-600" />
-          <p className="text-lg">Đang tải catalog sách...</p>
+          <p className="text-lg">Loading...</p>
         </div>
       </div>
     );
@@ -128,7 +128,7 @@ export default function Catalog() {
           onClick={() => window.location.reload()}
           className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
         >
-          Thử lại
+          Try again
         </button>
       </div>
     );

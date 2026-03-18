@@ -14,7 +14,17 @@ export default function Checkout() {
   const [step, setStep] = useState(0); // 0: Cart, 1: Shipping, 2: Payment
   const [paymentMethod, setPaymentMethod] = useState('credit_card');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  
+  // Shipping form states
+  const [firstName, setFirstName] = useState(user?.first_name || '');
+  const [lastName, setLastName] = useState(user?.last_name || '');
   const [shippingAddress, setShippingAddress] = useState(user?.address || '');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [city, setCity] = useState('');
+  const [stateProv, setStateProv] = useState('');
+  const [zip, setZip] = useState('');
+
+  const isShippingValid = firstName.trim() !== '' && lastName.trim() !== '' && shippingAddress.trim() !== '' && phone.trim() !== '';
 
   const subtotal = cartTotal;
   const shipping = 5.99;
@@ -56,6 +66,8 @@ export default function Checkout() {
 
       if (paymentMethod === 'qr_code') {
         navigate('/scan-to-pay');
+      } else if (paymentMethod === 'paypal') {
+        navigate('/scan-to-pay?method=paypal');
       } else {
         navigate('/order-success');
       }
@@ -73,7 +85,14 @@ export default function Checkout() {
         status: 'Processing' as const
       });
       clearCart();
-      navigate('/order-success');
+
+      if (paymentMethod === 'qr_code') {
+        navigate('/scan-to-pay');
+      } else if (paymentMethod === 'paypal') {
+        navigate('/scan-to-pay?method=paypal');
+      } else {
+        navigate('/order-success');
+      }
     } finally {
       setIsPlacingOrder(false);
     }
@@ -196,15 +215,33 @@ export default function Checkout() {
                   </h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name</label>
-                      <input type="text" className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" required />
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        First Name <span className="text-red-500">*</span>
+                      </label>
+                      <input 
+                        type="text" 
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" 
+                        required 
+                      />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Last Name</label>
-                      <input type="text" className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" required />
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Last Name <span className="text-red-500">*</span>
+                      </label>
+                      <input 
+                        type="text" 
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" 
+                        required 
+                      />
                     </div>
                     <div className="sm:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Address <span className="text-red-500">*</span>
+                      </label>
                       <input 
                         type="text" 
                         value={shippingAddress}
@@ -215,22 +252,45 @@ export default function Checkout() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">City</label>
-                      <input type="text" className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" required />
+                      <input 
+                        type="text" 
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" 
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">State / Province</label>
-                      <input type="text" className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" required />
+                      <input 
+                        type="text" 
+                        value={stateProv}
+                        onChange={(e) => setStateProv(e.target.value)}
+                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" 
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">ZIP / Postal Code</label>
-                      <input type="text" className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" required />
+                      <input 
+                        type="text" 
+                        value={zip}
+                        onChange={(e) => setZip(e.target.value)}
+                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" 
+                      />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone Number</label>
-                      <input type="tel" className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" required />
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Phone Number <span className="text-red-500">*</span>
+                      </label>
+                      <input 
+                        type="tel" 
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500" 
+                        required 
+                      />
                     </div>
                   </div>
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center mt-6">
                     <button 
                       type="button" 
                       onClick={() => setStep(0)}
@@ -240,8 +300,15 @@ export default function Checkout() {
                     </button>
                     <button 
                       type="button" 
-                      onClick={() => setStep(2)}
-                      className="bg-indigo-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                      onClick={() => {
+                        if (isShippingValid) setStep(2);
+                      }}
+                      disabled={!isShippingValid}
+                      className={`px-8 py-3 rounded-lg font-bold transition-colors flex items-center gap-2 ${
+                        isShippingValid 
+                          ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
+                          : 'bg-indigo-300 text-white cursor-not-allowed dark:bg-indigo-900/50'
+                      }`}
                     >
                       Continue to Payment <ChevronRight className="h-5 w-5" />
                     </button>

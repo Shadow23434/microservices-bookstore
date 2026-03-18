@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$WorkspaceRoot = $PSScriptRoot
 )
 
@@ -71,64 +71,197 @@ foreach ($entry in $db.GetEnumerator()) {
     Ensure-DbFile -DbPath $entry.Value
 }
 
-$bookHasImageUrlColumn = [bool](Invoke-SqliteScalar -DbPath $db.books -Sql "SELECT 1 FROM pragma_table_info('app_book') WHERE name = 'imageUrl' LIMIT 1;")
+$bookHasImageUrlColumn = [bool](Invoke-SqliteScalar -DbPath $db.books -Sql "SELECT 1 FROM pragma_table_info('app_book') WHERE name = 'image' LIMIT 1;")
 
 $categories = @(
-    @{ name = "Programming"; description = "Sách lập trình và thực hành phát triển phần mềm" },
-    @{ name = "Python"; description = "Sách về Python cho người mới và nâng cao" },
-    @{ name = "Software Architecture"; description = "Thiết kế hệ thống và kiến trúc phần mềm" },
-    @{ name = "Data Engineering"; description = "Dữ liệu, hạ tầng và hệ thống phân tán" }
+    @{ name = "Fiction"; description = "" },
+    @{ name = "Self-Help"; description = "" },
+    @{ name = "Sci-Fi"; description = "" },
+    @{ name = "Mystery"; description = "" },
+    @{ name = "Non-Fiction"; description = "" },
+    @{ name = "Biography"; description = "" }
 )
 
 $books = @(
     @{
-        title = "Django REST Framework"
-        author = "Tom Christie"
-        price = "380000"
-        stock = 10
-        imageUrl = "https://tse2.mm.bing.net/th/id/OIP.ltQXmHg61bcfaX86yY_bAwAAAA?pid=ImgDet&w=191&h=235&c=7&o=7&rm=3"
-    },
-    @{
-        title = "Microservices Patterns"
-        author = "Chris Richardson"
-        price = "520000"
-        stock = 8
-        imageUrl = "https://th.bing.com/th/id/OIP.1C4yVyGkcWqJdnLSR_cLIAHaLH?w=115&h=180&c=7&r=0&o=7&pid=1.7&rm=3"
-    },
-    @{
-        title = "Python Crash Course"
-        author = "Eric Matthes"
-        price = "320000"
+        title = "The Midnight Library"
+        author = "Matt Haig"
+        price = "24.99"
         stock = 15
-        imageUrl = "https://covers.openlibrary.org/b/isbn/9781593279288-L.jpg"
+        image = "https://picsum.photos/seed/book1/300/450"
+        category = "Fiction"
+        format = "Hardcover"
+        pages = 304
+        language = "English"
+        publisher = "Viking"
+        publicationDate = "Sept 29, 2020"
+        isbn = "978-0525559474"
+        description = ""
     },
     @{
-        title = "Fluent Python"
-        author = "Luciano Ramalho"
-        price = "495000"
-        stock = 9
-        imageUrl = "https://covers.openlibrary.org/b/isbn/9781492056355-L.jpg"
+        title = "Atomic Habits"
+        author = "James Clear"
+        price = "19.99"
+        stock = 42
+        image = "https://picsum.photos/seed/book2/300/450"
+        category = "Self-Help"
+        format = "Paperback"
+        pages = 320
+        language = "English"
+        publisher = "Avery"
+        publicationDate = "Oct 16, 2018"
+        isbn = "978-0735211292"
+        description = ""
     },
     @{
-        title = "Clean Code"
-        author = "Robert C. Martin"
-        price = "410000"
+        title = "Project Hail Mary"
+        author = "Andy Weir"
+        price = "22.50"
+        stock = 8
+        image = "https://picsum.photos/seed/book3/300/450"
+        category = "Sci-Fi"
+        format = "Hardcover"
+        pages = 496
+        language = "English"
+        publisher = "Ballantine Books"
+        publicationDate = "May 4, 2021"
+        isbn = "978-0593135204"
+        description = ""
+    },
+    @{
+        title = "Dune"
+        author = "Frank Herbert"
+        price = "21.00"
+        stock = 25
+        image = "https://picsum.photos/seed/book4/300/450"
+        category = "Sci-Fi"
+        format = "Paperback"
+        pages = 896
+        language = "English"
+        publisher = "Ace Books"
+        publicationDate = "Oct 1, 1990"
+        isbn = "978-0441172719"
+        description = ""
+    },
+    @{
+        title = "The Silent Patient"
+        author = "Alex Michaelides"
+        price = "18.50"
         stock = 12
-        imageUrl = "https://covers.openlibrary.org/b/isbn/9780132350884-L.jpg"
+        image = "https://picsum.photos/seed/book5/300/450"
+        category = "Mystery"
+        format = "Paperback"
+        pages = 336
+        language = "English"
+        publisher = "Celadon Books"
+        publicationDate = "Feb 5, 2019"
+        isbn = "978-1250301697"
+        description = ""
     },
     @{
-        title = "The Pragmatic Programmer"
-        author = "Andrew Hunt"
-        price = "450000"
-        stock = 7
-        imageUrl = "https://covers.openlibrary.org/b/isbn/9780135957059-L.jpg"
+        title = "Sapiens: A Brief History of Humankind"
+        author = "Yuval Noah Harari"
+        price = "25.00"
+        stock = 30
+        image = "https://picsum.photos/seed/book6/300/450"
+        category = "Non-Fiction"
+        format = "Paperback"
+        pages = 464
+        language = "English"
+        publisher = "Harper"
+        publicationDate = "Feb 10, 2015"
+        isbn = "978-0062316097"
+        description = ""
     },
     @{
-        title = "Designing Data-Intensive Applications"
-        author = "Martin Kleppmann"
-        price = "560000"
-        stock = 6
-        imageUrl = "https://covers.openlibrary.org/b/isbn/9781449373320-L.jpg"
+        title = "Thinking, Fast and Slow"
+        author = "Daniel Kahneman"
+        price = "20.00"
+        stock = 18
+        image = "https://picsum.photos/seed/book7/300/450"
+        category = "Non-Fiction"
+        format = "Paperback"
+        pages = 499
+        language = "English"
+        publisher = "Farrar, Straus and Giroux"
+        publicationDate = "Apr 2, 2013"
+        isbn = "978-0374533557"
+        description = ""
+    },
+    @{
+        title = "1984"
+        author = "George Orwell"
+        price = "15.99"
+        stock = 50
+        image = "https://picsum.photos/seed/book8/300/450"
+        category = "Fiction"
+        format = "Paperback"
+        pages = 328
+        language = "English"
+        publisher = "Signet Classic"
+        publicationDate = "Jan 1, 1950"
+        isbn = "978-0451524935"
+        description = ""
+    },
+    @{
+        title = "The Alchemist"
+        author = "Paulo Coelho"
+        price = "16.99"
+        stock = 35
+        image = "https://picsum.photos/seed/book9/300/450"
+        category = "Fiction"
+        format = "Paperback"
+        pages = 208
+        language = "English"
+        publisher = "HarperOne"
+        publicationDate = "Apr 15, 2014"
+        isbn = "978-0062315007"
+        description = ""
+    },
+    @{
+        title = "Becoming"
+        author = "Michelle Obama"
+        price = "22.00"
+        stock = 22
+        image = "https://picsum.photos/seed/book10/300/450"
+        category = "Biography"
+        format = "Hardcover"
+        pages = 448
+        language = "English"
+        publisher = "Crown"
+        publicationDate = "Nov 13, 2018"
+        isbn = "978-1524763138"
+        description = ""
+    },
+    @{
+        title = "The Psychology of Money"
+        author = "Morgan Housel"
+        price = "18.99"
+        stock = 40
+        image = "https://picsum.photos/seed/book11/300/450"
+        category = "Self-Help"
+        format = "Paperback"
+        pages = 252
+        language = "English"
+        publisher = "Harriman House"
+        publicationDate = "Sep 8, 2020"
+        isbn = "978-0857197689"
+        description = ""
+    },
+    @{
+        title = "Educated"
+        author = "Tara Westover"
+        price = "17.99"
+        stock = 14
+        image = "https://picsum.photos/seed/book12/300/450"
+        category = "Biography"
+        format = "Paperback"
+        pages = 352
+        language = "English"
+        publisher = "Random House"
+        publicationDate = "Feb 20, 2018"
+        isbn = "978-0399590504"
+        description = ""
     }
 )
 
@@ -170,12 +303,20 @@ foreach ($book in $books) {
     $author = Escape-SqlLiteral $book.author
     $price = [double]$book.price
     $stock = [int]$book.stock
-    $imageUrl = Escape-SqlLiteral $book.imageUrl
+    $image = Escape-SqlLiteral $book.image
+    $category = Escape-SqlLiteral $book.category
+    $format = Escape-SqlLiteral $book.format
+    $pages = [int]$book.pages
+    $language = Escape-SqlLiteral $book.language
+    $publisher = Escape-SqlLiteral $book.publisher
+    $publicationDate = Escape-SqlLiteral $book.publicationDate
+    $isbn = Escape-SqlLiteral $book.isbn
+    $description = Escape-SqlLiteral $book.description
 
     if ($bookHasImageUrlColumn) {
         Invoke-Sqlite -DbPath $db.books -Sql @"
-INSERT INTO app_book (title, author, price, stock, imageUrl)
-SELECT $title, $author, $price, $stock, $imageUrl
+INSERT INTO app_book (title, author, price, stock, image, category, format, pages, language, publisher, publicationDate, isbn, description)
+SELECT $title, $author, $price, $stock, $image, $category, $format, $pages, $language, $publisher, $publicationDate, $isbn, $description
 WHERE NOT EXISTS (
     SELECT 1 FROM app_book WHERE title = $title AND author = $author
 );
@@ -271,27 +412,27 @@ WHERE NOT EXISTS (
 $reviews = @(
     @{
         customer_id = [int]$customerIndex["nguyenvanan@example.com"]
-        book_id = [int]$bookIndex["Python Crash Course"]
+        book_id = [int]$bookIndex["The Midnight Library"]
         rating = 5
-        comment = "Sách nhập môn rất dễ theo dõi và thực hành."
+        comment = "SÃ¡ch nháº­p mÃ´n ráº¥t dá»… theo dÃµi vÃ  thá»±c hÃ nh."
     },
     @{
         customer_id = [int]$customerIndex["nguyenvanan@example.com"]
-        book_id = [int]$bookIndex["Clean Code"]
+        book_id = [int]$bookIndex["Atomic Habits"]
         rating = 5
-        comment = "Nội dung thực tế, hữu ích khi review code."
+        comment = "Ná»™i dung thá»±c táº¿, há»¯u Ã­ch khi review code."
     },
     @{
         customer_id = [int]$customerIndex["tranminhchau@example.com"]
-        book_id = [int]$bookIndex["Fluent Python"]
+        book_id = [int]$bookIndex["Project Hail Mary"]
         rating = 4
-        comment = "Phù hợp khi đã có nền tảng Python."
+        comment = "PhÃ¹ há»£p khi Ä'Ã£ cÃ³ ná»n táº£ng Python."
     },
     @{
         customer_id = [int]$customerIndex["lehoangduc@example.com"]
-        book_id = [int]$bookIndex["The Pragmatic Programmer"]
+        book_id = [int]$bookIndex["Dune"]
         rating = 5
-        comment = "Rất đáng đọc cho mọi lập trình viên."
+        comment = "Ráº¥t Ä'Ã¡ng Ä'á»c cho má»i láº­p trÃ¬nh viÃªn."
     }
 )
 
@@ -317,16 +458,16 @@ $orders = @(
         shipping_address = "123 Nguyen Hue, Quan 1, TP.HCM"
         payment_method = "credit_card"
         items = @(
-            @{ title = "Python Crash Course"; quantity = 1; unit_price = "320000" },
-            @{ title = "Clean Code"; quantity = 1; unit_price = "410000" }
+            @{ title = "The Midnight Library"; quantity = 1; unit_price = "24.99" },
+            @{ title = "Atomic Habits"; quantity = 1; unit_price = "19.99" }
         )
     },
     @{
         customer_id = [int]$customerIndex["tranminhchau@example.com"]
         shipping_address = "45 Le Loi, Hai Chau, Da Nang"
-        payment_method = "e_wallet"
+        payment_method = "paypal"
         items = @(
-            @{ title = "Fluent Python"; quantity = 1; unit_price = "495000" }
+            @{ title = "Project Hail Mary"; quantity = 1; unit_price = "22.50" }
         )
     }
 )
@@ -413,3 +554,5 @@ Write-Host "Seed complete (direct SQLite)." -ForegroundColor Green
 $summary.GetEnumerator() | ForEach-Object {
     Write-Host ("{0}: {1}" -f $_.Key, $_.Value)
 }
+
+

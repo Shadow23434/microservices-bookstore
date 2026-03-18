@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 ('customer_id', models.IntegerField()),
                 ('address', models.TextField()),
                 ('tracking_number', models.CharField(default=uuid.uuid4, max_length=100, unique=True)),
-                ('status', models.CharField(choices=[('pending', 'Pending'), ('reserved', 'Reserved'), ('shipped', 'Shipped'), ('delivered', 'Delivered'), ('cancelled', 'Cancelled')], default='pending', max_length=20)),
+                ('status', models.CharField(choices=[('processing', 'Processing'), ('shipped', 'Shipped'), ('delivered', 'Delivered'), ('returned', 'Returned'), ('cancelled', 'Cancelled')], default='processing', max_length=20)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
             ],
