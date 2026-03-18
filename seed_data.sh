@@ -58,7 +58,13 @@ invoke_sqlite "${db[categories]}" "INSERT INTO app_category (name, description, 
 invoke_sqlite "${db[categories]}" "INSERT INTO app_category (name, description, created_at, parent_id) SELECT 'Sci-Fi', 'Science fiction', datetime('now'), NULL WHERE NOT EXISTS (SELECT 1 FROM app_category WHERE name = 'Sci-Fi');"
 invoke_sqlite "${db[categories]}" "INSERT INTO app_category (name, description, created_at, parent_id) SELECT 'Mystery', 'Mystery and thriller books', datetime('now'), NULL WHERE NOT EXISTS (SELECT 1 FROM app_category WHERE name = 'Mystery');"
 invoke_sqlite "${db[categories]}" "INSERT INTO app_category (name, description, created_at, parent_id) SELECT 'Non-Fiction', 'Non-fiction books', datetime('now'), NULL WHERE NOT EXISTS (SELECT 1 FROM app_category WHERE name = 'Non-Fiction');"
-invoke_sqlite "${db[categories]}" "INSERT INTO app_category (name, description, created_at, parent_id) SELECT 'Biography', 'Biographies and autobiographies', datetime('now'), NULL WHERE NOT EXISTS (SELECT 1 FROM app_category WHERE name = 'Biography');" 
+invoke_sqlite "${db[categories]}" "INSERT INTO app_category (name, description, created_at, parent_id) SELECT 'Biography', 'Biographies and autobiographies', datetime('now'), NULL WHERE NOT EXISTS (SELECT 1 FROM app_category WHERE name = 'Biography');"
+invoke_sqlite "${db[categories]}" "INSERT INTO app_category (name, description, created_at, parent_id) SELECT 'Technology', 'Technology and computer science', datetime('now'), NULL WHERE NOT EXISTS (SELECT 1 FROM app_category WHERE name = 'Technology');"
+invoke_sqlite "${db[categories]}" "INSERT INTO app_category (name, description, created_at, parent_id) SELECT 'Business', 'Business, finance and investing', datetime('now'), NULL WHERE NOT EXISTS (SELECT 1 FROM app_category WHERE name = 'Business');"
+invoke_sqlite "${db[categories]}" "INSERT INTO app_category (name, description, created_at, parent_id) SELECT 'Fantasy', 'Fantasy world books', datetime('now'), NULL WHERE NOT EXISTS (SELECT 1 FROM app_category WHERE name = 'Fantasy');"
+
+
+ 
 
 echo "Seeding books ..."
 seed_book() {
@@ -82,30 +88,39 @@ seed_book() {
   fi
 }
 
-seed_book "The Midnight Library" "Matt Haig" "24.99" "15" "https://picsum.photos/seed/book1/300/450" "Fiction" "Hardcover" "304" "English" "Viking" "Sept 29, 2020" "978-0525559474" "Between life and death there is a library, and within that library, the shelves go on forever. Every book provides a chance to try another life you could have lived. To see how things would be if you had made other choices... Would you have done anything different, if you had the chance to undo your regrets? A dazzling novel about all the choices that go into a life well lived, from the internationally bestselling author of Reasons to Stay Alive and How To Stop Time."
-seed_book "Atomic Habits" "James Clear" "19.99" "42" "https://picsum.photos/seed/book2/300/450" "Self-Help" "Paperback" "320" "English" "Avery" "Oct 16, 2018" "978-0735211292" "No matter your goals, Atomic Habits offers a proven framework for improving--every day. James Clear, one of the world's leading experts on habit formation, reveals practical strategies that will teach you exactly how to form good habits, break bad ones, and master the tiny behaviors that lead to remarkable results."
-seed_book "Project Hail Mary" "Andy Weir" "22.50" "8" "https://picsum.photos/seed/book3/300/450" "Sci-Fi" "Hardcover" "496" "English" "Ballantine Books" "May 4, 2021" "978-0593135204" "Ryland Grace is the sole survivor on a desperate, last-chance mission—and if he fails, humanity and the earth itself will perish. Except that right now, he doesn't know that. He can't even remember his own name, let alone the nature of his assignment or how to complete it."
-seed_book "Dune" "Frank Herbert" "21.00" "25" "https://picsum.photos/seed/book4/300/450" "Sci-Fi" "Paperback" "896" "English" "Ace Books" "Oct 1, 1990" "978-0441172719" "Set on the desert planet Arrakis, Dune is the story of the boy Paul Atreides, heir to a noble family tasked with ruling an inhospitable world where the only thing of value is the 'spice' melange, a drug capable of extending life and enhancing consciousness."
-seed_book "The Silent Patient" "Alex Michaelides" "18.50" "12" "https://picsum.photos/seed/book5/300/450" "Mystery" "Paperback" "336" "English" "Celadon Books" "Feb 5, 2019" "978-1250301697" "Alicia Berenson’s life is seemingly perfect. A famous painter married to an in-demand fashion photographer, she lives in a grand house with big windows overlooking a park in one of London’s most desirable areas. One evening her husband Gabriel returns home late from a fashion shoot, and Alicia shoots him five times in the face, and then never speaks another word."
-seed_book "Sapiens: A Brief History of Humankind" "Yuval Noah Harari" "25.00" "30" "https://picsum.photos/seed/book6/300/450" "Non-Fiction" "Paperback" "464" "English" "Harper" "Feb 10, 2015" "978-0062316097" "From a renowned historian comes a groundbreaking narrative of humanity’s creation and evolution—a #1 international bestseller—that explores the ways in which biology and history have defined us and enhanced our understanding of what it means to be 'human'."
-seed_book "Thinking, Fast and Slow" "Daniel Kahneman" "20.00" "18" "https://picsum.photos/seed/book7/300/450" "Non-Fiction" "Paperback" "499" "English" "Farrar, Straus and Giroux" "Apr 2, 2013" "978-0374533557" "The phenomenal New York Times Bestseller by Nobel Prize-winner Daniel Kahneman, Thinking, Fast and Slow offers a whole new look at the way our minds work, teaching us how to make better decisions."
-seed_book "1984" "George Orwell" "15.99" "50" "https://picsum.photos/seed/book8/300/450" "Fiction" "Paperback" "328" "English" "Signet Classic" "Jan 1, 1950" "978-0451524935" "Among the seminal texts of the 20th century, Nineteen Eighty-Four is a rare work that grows more haunting as its futuristic purgatory becomes more real. Published in 1949, the book offers political satirist George Orwell's nightmarish vision of a totalitarian, bureaucratic world and one poor stiff's attempt to find individuality."
-seed_book "The Alchemist" "Paulo Coelho" "16.99" "35" "https://picsum.photos/seed/book9/300/450" "Fiction" "Paperback" "208" "English" "HarperOne" "Apr 15, 2014" "978-0062315007" "Paulo Coelho's enchanting novel has inspired a devoted following around the world. This story, dazzling in its powerful simplicity and inspiring wisdom, is about an Andalusian shepherd boy named Santiago who travels from his homeland in Spain to the Egyptian desert in search of a treasure buried in the Pyramids."
-seed_book "Becoming" "Michelle Obama" "22.00" "22" "https://picsum.photos/seed/book10/300/450" "Biography" "Hardcover" "448" "English" "Crown" "Nov 13, 2018" "978-1524763138" "In a life filled with meaning and accomplishment, Michelle Obama has emerged as one of the most iconic and compelling women of our era. As First Lady of the United States of America—the first African American to serve in that role—she helped create the most welcoming and inclusive White House in history."
-seed_book "The Psychology of Money" "Morgan Housel" "18.99" "40" "https://picsum.photos/seed/book11/300/450" "Self-Help" "Paperback" "252" "English" "Harriman House" "Sep 8, 2020" "978-0857197689" "Doing well with money isn't necessarily about what you know. It's about how you behave. And behavior is hard to teach, even to really smart people. Money—investing, personal finance, and business decisions—is typically taught as a math-based field, where data and formulas tell us exactly what to do. But in the real world people don't make financial decisions on a spreadsheet."
-seed_book "Educated" "Tara Westover" "17.99" "14" "https://picsum.photos/seed/book12/300/450" "Biography" "Paperback" "352" "English" "Random House" "Feb 20, 2018" "978-0399590504" "An unforgettable memoir about a young girl who, kept out of school, leaves her survivalist family and goes on to earn a PhD from Cambridge University. Born to survivalists in the mountains of Idaho, Tara Westover was seventeen the first time she set foot in a classroom."
+seed_book "The Midnight Library" "Matt Haig" "24.99" "15" "https://picsum.photos/seed/book1/300/450" "Fiction" "Hardcover" "304" "English" "Viking" "Sept 29, 2020" "978-0525559474" "Between life and death there is a library..."
+seed_book "Atomic Habits" "James Clear" "19.99" "42" "https://picsum.photos/seed/book2/300/450" "Self-Help" "Paperback" "320" "English" "Avery" "Oct 16, 2018" "978-0735211292" "No matter your goals, Atomic Habits offers a proven framework..."
+seed_book "Project Hail Mary" "Andy Weir" "22.50" "8" "https://picsum.photos/seed/book3/300/450" "Sci-Fi" "Hardcover" "496" "English" "Ballantine Books" "May 4, 2021" "978-0593135204" "Ryland Grace is the sole survivor..."
+seed_book "Dune" "Frank Herbert" "21.00" "25" "https://picsum.photos/seed/book4/300/450" "Sci-Fi" "Paperback" "896" "English" "Ace Books" "Oct 1, 1990" "978-0441172719" "Set on the desert planet Arrakis..."
+seed_book "The Silent Patient" "Alex Michaelides" "18.50" "12" "https://picsum.photos/seed/book5/300/450" "Mystery" "Paperback" "336" "English" "Celadon Books" "Feb 5, 2019" "978-1250301697" "Alicia Berenson’s life is seemingly perfect..."
+seed_book "Sapiens: A Brief History of Humankind" "Yuval Noah Harari" "25.00" "30" "https://picsum.photos/seed/book6/300/450" "Non-Fiction" "Paperback" "464" "English" "Harper" "Feb 10, 2015" "978-0062316097" "From a renowned historian..."
+seed_book "Thinking, Fast and Slow" "Daniel Kahneman" "20.00" "18" "https://picsum.photos/seed/book7/300/450" "Non-Fiction" "Paperback" "499" "English" "Farrar, Straus and Giroux" "Apr 2, 2013" "978-0374533557" "The phenomenal New York Times Bestseller..."
+seed_book "1984" "George Orwell" "15.99" "50" "https://picsum.photos/seed/book8/300/450" "Fiction" "Paperback" "328" "English" "Signet Classic" "Jan 1, 1950" "978-0451524935" "Among the seminal texts of the 20th century..."
+seed_book "The Alchemist" "Paulo Coelho" "16.99" "35" "https://picsum.photos/seed/book9/300/450" "Fiction" "Paperback" "208" "English" "HarperOne" "Apr 15, 2014" "978-0062315007" "Paulo Coelho's enchanting novel..."
+seed_book "Becoming" "Michelle Obama" "22.00" "22" "https://picsum.photos/seed/book10/300/450" "Biography" "Hardcover" "448" "English" "Crown" "Nov 13, 2018" "978-1524763138" "In a life filled with meaning and accomplishment..."
+seed_book "The Psychology of Money" "Morgan Housel" "18.99" "40" "https://picsum.photos/seed/book11/300/450" "Self-Help" "Paperback" "252" "English" "Harriman House" "Sep 8, 2020" "978-0857197689" "Doing well with money isn't necessarily about what you know..."
+seed_book "Educated" "Tara Westover" "17.99" "14" "https://picsum.photos/seed/book12/300/450" "Biography" "Paperback" "352" "English" "Random House" "Feb 20, 2018" "978-0399590504" "An unforgettable memoir about a young girl..."
+seed_book "Clean Code" "Robert C. Martin" "34.50" "25" "https://picsum.photos/seed/book13/300/450" "Technology" "Paperback" "464" "English" "Prentice Hall" "Aug 1, 2008" "978-0132350884" "Even bad code can function..." 
+seed_book "The Pragmatic Programmer" "David Thomas" "39.99" "15" "https://picsum.photos/seed/book14/300/450" "Technology" "Hardcover" "352" "English" "Addison-Wesley" "Sep 13, 2019" "978-0135957059" "The Pragmatic Programmer is one of those rare tech books..."
+seed_book "Fluent Python" "Luciano Ramalho" "45.00" "12" "https://picsum.photos/seed/book15/300/450" "Technology" "Paperback" "984" "English" "O'Reilly Media" "May 20, 2022" "978-1492056355" "Python's simplicity lets you become productive quickly..."
+seed_book "Designing Data-Intensive Applications" "Martin Kleppmann" "42.50" "20" "https://picsum.photos/seed/book16/300/450" "Technology" "Paperback" "616" "English" "O'Reilly Media" "Mar 16, 2017" "978-1449373320" "Data is at the center of many challenges..."
 
 book_1="$(invoke_sqlite_scalar "${db[books]}" "SELECT id FROM app_book WHERE title='The Midnight Library' AND author='Matt Haig' LIMIT 1;")"
 book_2="$(invoke_sqlite_scalar "${db[books]}" "SELECT id FROM app_book WHERE title='Atomic Habits' AND author='James Clear' LIMIT 1;")"
 book_3="$(invoke_sqlite_scalar "${db[books]}" "SELECT id FROM app_book WHERE title='Project Hail Mary' AND author='Andy Weir' LIMIT 1;")"
 book_4="$(invoke_sqlite_scalar "${db[books]}" "SELECT id FROM app_book WHERE title='Dune' AND author='Frank Herbert' LIMIT 1;")"
+book_cc="$(invoke_sqlite_scalar "${db[books]}" "SELECT id FROM app_book WHERE title='Clean Code' AND author='Robert C. Martin' LIMIT 1;")"
+book_pp="$(invoke_sqlite_scalar "${db[books]}" "SELECT id FROM app_book WHERE title='The Pragmatic Programmer' AND author='David Thomas' LIMIT 1;")"
+book_fp="$(invoke_sqlite_scalar "${db[books]}" "SELECT id FROM app_book WHERE title='Fluent Python' AND author='Luciano Ramalho' LIMIT 1;")"
+book_1984="$(invoke_sqlite_scalar "${db[books]}" "SELECT id FROM app_book WHERE title='1984' AND author='George Orwell' LIMIT 1;")"
 
-for v in "$book_1" "$book_2" "$book_3" "$book_4"; do
+for v in "$book_1" "$book_2" "$book_3" "$book_4" "$book_cc" "$book_pp" "$book_fp" "$book_1984"; do
   if [[ -z "$v" ]]; then
     echo "[ERROR] Cannot resolve seeded book IDs." >&2
     exit 1
   fi
 done
+
 
 echo "Seeding customers ..."
 invoke_sqlite "${db[customers]}" "INSERT INTO app_customer (name, email) SELECT 'Nguyen Van An', 'nguyenvanan@example.com' WHERE NOT EXISTS (SELECT 1 FROM app_customer WHERE email='nguyenvanan@example.com');"
@@ -132,11 +147,15 @@ echo "Seeding staff ..."
 invoke_sqlite "${db[staff]}" "INSERT INTO app_staff (name, email, role, employee_id, is_active, created_at) SELECT 'Pham Thi Kho', 'warehouse.team@example.com', 'warehouse', 'STF001', 1, datetime('now') WHERE NOT EXISTS (SELECT 1 FROM app_staff WHERE employee_id='STF001');"
 invoke_sqlite "${db[staff]}" "INSERT INTO app_staff (name, email, role, employee_id, is_active, created_at) SELECT 'Vu Bao Sales', 'sales.team@example.com', 'sales', 'STF002', 1, datetime('now') WHERE NOT EXISTS (SELECT 1 FROM app_staff WHERE employee_id='STF002');"
 invoke_sqlite "${db[staff]}" "INSERT INTO app_staff (name, email, role, employee_id, is_active, created_at) SELECT 'Do Support', 'support.team@example.com', 'support', 'STF003', 1, datetime('now') WHERE NOT EXISTS (SELECT 1 FROM app_staff WHERE employee_id='STF003');"
+invoke_sqlite "${db[staff]}" "INSERT INTO app_staff (name, email, role, employee_id, is_active, created_at) SELECT 'Vuong Security', 'security.team@example.com', 'security', 'STF004', 1, datetime('now') WHERE NOT EXISTS (SELECT 1 FROM app_staff WHERE employee_id='STF004');"
+
 
 echo "Seeding managers ..."
 invoke_sqlite "${db[managers]}" "INSERT INTO app_manager (name, email, department, employee_id, is_active, created_at) SELECT 'Nguyen Operations', 'operations.manager@example.com', 'operations', 'MGR001', 1, datetime('now') WHERE NOT EXISTS (SELECT 1 FROM app_manager WHERE employee_id='MGR001');"
 invoke_sqlite "${db[managers]}" "INSERT INTO app_manager (name, email, department, employee_id, is_active, created_at) SELECT 'Tran Inventory', 'inventory.manager@example.com', 'inventory', 'MGR002', 1, datetime('now') WHERE NOT EXISTS (SELECT 1 FROM app_manager WHERE employee_id='MGR002');"
 invoke_sqlite "${db[managers]}" "INSERT INTO app_manager (name, email, department, employee_id, is_active, created_at) SELECT 'Le Finance', 'finance.manager@example.com', 'finance', 'MGR003', 1, datetime('now') WHERE NOT EXISTS (SELECT 1 FROM app_manager WHERE employee_id='MGR003');"
+invoke_sqlite "${db[managers]}" "INSERT INTO app_manager (name, email, department, employee_id, is_active, created_at) SELECT 'Truong IT', 'it.manager@example.com', 'it', 'MGR004', 1, datetime('now') WHERE NOT EXISTS (SELECT 1 FROM app_manager WHERE employee_id='MGR004');"
+
 
 echo "Seeding reviews ..."
 insert_review() {
@@ -146,10 +165,15 @@ insert_review() {
   invoke_sqlite "${db[reviews]}" "INSERT INTO app_review (customer_id, book_id, rating, comment, created_at, updated_at) SELECT $customer_id, $book_id, $rating, $c, datetime('now'), datetime('now') WHERE NOT EXISTS (SELECT 1 FROM app_review WHERE customer_id = $customer_id AND book_id = $book_id);"
 }
 
-insert_review "$customer_an" "$book_1" 5 "Sách nhập môn rất dễ theo dõi và thực hành."
-insert_review "$customer_an" "$book_2" 5 "Nội dung thực tế, hữu ích khi review code."
-insert_review "$customer_chau" "$book_3" 4 "Phù hợp khi đã có nền tảng Python."
-insert_review "$customer_duc" "$book_4" 5 "Rất đáng đọc cho mọi lập trình viên."
+insert_review "$customer_an" "$book_1" 5 "Sách tuyệt vời, rất đáng suy ngẫm về các lựa chọn trong cuộc đời."
+insert_review "$customer_an" "$book_2" 5 "Nội dung thực tế, hữu ích để thay đổi thói quen."
+insert_review "$customer_chau" "$book_3" 4 "Một chuyến phiêu lưu không gian thú vị."
+insert_review "$customer_duc" "$book_4" 5 "Tuyệt tác Sci-Fi không thể bỏ qua."
+insert_review "$customer_mai" "$book_cc" 5 "Sách gối đầu giường cho mọi lập trình viên."
+insert_review "$customer_mai" "$book_pp" 5 "Kiến thức vô giá cho sự nghiệp IT."
+insert_review "$customer_kiet" "$book_fp" 4 "Sách hay cho ai muốn hiểu sâu về Python."
+insert_review "$customer_giang" "$book_1984" 5 "Một tác phẩm kinh điển đáng sợ lại rất thực tế."
+
 
 echo "Seeding orders, payments and shipments ..."
 
