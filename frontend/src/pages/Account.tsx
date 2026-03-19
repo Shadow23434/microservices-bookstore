@@ -9,6 +9,7 @@ import customerService from '../api/customerService';
 import orderService from '../api/orderService';
 import reviewService from '../api/reviewService';
 import bookService from '../api/bookService';
+import shipmentService from '../api/shipmentService';
 
 export default function Account() {
   const [activeTab, setActiveTab] = useState('profile');
@@ -41,6 +42,7 @@ export default function Account() {
 
   // API State
   const [apiOrders, setApiOrders] = useState<any[]>([]);
+  const [apiShipments, setApiShipments] = useState<any[]>([]);
   const [apiReviews, setApiReviews] = useState<any[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
@@ -49,12 +51,13 @@ export default function Account() {
     const loadData = async () => {
       setIsLoadingData(true);
       try {
-        const [ordersData, reviewsData, booksData] = await Promise.all([
+        const [ordersData, reviewsData, booksData, shipmentsData] = await Promise.all([
           orderService.getOrdersByCustomer(user.id) as unknown as any[],
           reviewService.getReviews({ customer_id: user.id }) as unknown as any[],
-          bookService.getAllBooks() as unknown as any[]
+          bookService.getAllBooks() as unknown as any[],
+          shipmentService.getShipments() as unknown as any[]
         ]);
-        
+
         let booksList = Array.isArray(booksData) ? booksData : [];
         if (booksData && typeof booksData === 'object' && Array.isArray((booksData as any).results)) {
             booksList = (booksData as any).results;
@@ -70,7 +73,27 @@ export default function Account() {
             return r;
         });
 
-        setApiOrders(Array.isArray(ordersData) ? ordersData : []);
+        const validOrders = Array.isArray(ordersData) ? ordersData : [];
+        const enrichedOrders = validOrders.map(order => {
+          if (order.items && Array.isArray(order.items)) {
+            const enrichedItems = order.items.map((item: any) => {
+              const bookId = item.book_id || item.bookId;
+              const book = booksList.find((b: any) => b.id === bookId || b.id == bookId);
+              if (book) {
+                return { ...item, title: book.title, image: book.image || book.imageUrl || `https://picsum.photos/seed/book${bookId}/400/600` };
+              }
+              return item;
+            });
+            return { ...order, items: enrichedItems };
+          }
+          return order;
+        });
+        const validShipments = Array.isArray(shipmentsData) ? shipmentsData : [];
+        const userOrderIds = enrichedOrders.map(o => o.id);
+        const userShipments = validShipments.filter((s:any) => userOrderIds.includes(s.order_id));
+
+        setApiOrders(enrichedOrders);
+        setApiShipments(userShipments);
         setApiReviews(enrichedReviews);
       } catch (err) {
         console.error('Failed to load user data:', err);
@@ -112,7 +135,14 @@ export default function Account() {
     }
   };
   
-  const activeShipments = apiOrders.filter(o => o.status !== 'Delivered' && o.status !== 'completed');
+  const activeShipments = apiOrders.map(order => {
+    const shipment = apiShipments.find(s => s.order_id === order.id);
+    const shipmentStatus = shipment ? shipment.status : order.status;
+    return { ...order, shipmentStatus: shipmentStatus || '', trackingNumber: shipment?.tracking_number };
+  }).filter(o => {
+    const st = String(o.shipmentStatus).toLowerCase();
+    return st && st !== 'delivered' && st !== 'completed' && st !== 'cancelled' && st !== 'returned';
+  });
   const userReviews = apiReviews;
 
   return (
@@ -276,27 +306,27 @@ export default function Account() {
                       <div key={order.id} className="border border-indigo-100 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-indigo-900/10 rounded-xl p-6">
                         <div className="flex justify-between items-start mb-6">
                           <div>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Order #{order.id}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Order #{order.id} {order.trackingNumber ? `• Tracking: ${order.trackingNumber}` : ''}</p>
                             <h3 className="font-bold text-gray-900 dark:text-white text-lg">Arriving Soon</h3>
                           </div>
-                          <span className="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-400 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">{order.status}</span>
+                          <span className="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-400 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">{order.shipmentStatus}</span>
                         </div>
                         
                         {/* Progress Bar */}
                         <div className="relative pt-4 mb-8">
                           <div className="overflow-hidden h-2 mb-4 text-xs flex rounded-full bg-gray-200 dark:bg-gray-700">
-                            <div style={{ width: order.status === 'Processing' ? '25%' : order.status === 'Shipped' ? '50%' : '100%' }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-600 transition-all duration-500"></div>
+                            <div style={{ width: order.shipmentStatus === 'processing' ? '33%' : order.shipmentStatus === 'shipped' ? '66%' : order.shipmentStatus === 'delivered' ? '100%' : '10%' }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-600 transition-all duration-500"></div>
                           </div>
                           <div className="flex justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
-                            <span className={order.status === 'Processing' ? "text-indigo-600 dark:text-indigo-400" : ""}>Ordered</span>
-                            <span className={order.status === 'Shipped' ? "text-indigo-600 dark:text-indigo-400" : ""}>Shipped</span>
-                            <span>Out for Delivery</span>
-                            <span>Delivered</span>
+                            <span className={order.shipmentStatus === 'pending' || order.shipmentStatus === 'confirmed' || order.shipmentStatus === 'processing' ? "text-indigo-600 dark:text-indigo-400" : ""}>Ordered</span>
+                            <span className={order.shipmentStatus === 'processing' ? "text-indigo-600 dark:text-indigo-400" : ""}>Processing</span>
+                            <span className={order.shipmentStatus === 'shipped' ? "text-indigo-600 dark:text-indigo-400" : ""}>Shipped</span>
+                            <span className={order.shipmentStatus === 'delivered' ? "text-indigo-600 dark:text-indigo-400" : ""}>Delivered</span>
                           </div>
                         </div>
 
                         <div className="space-y-4">
-                          {order.items.map(item => (
+                            {(order.items || []).map((item: any) => (
                             <div key={item.id} className="flex gap-4 items-center bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
                               <img src={item.image} alt={item.title} className="w-12 h-16 object-cover rounded shadow-sm" referrerPolicy="no-referrer" />
                               <div>
@@ -345,8 +375,10 @@ export default function Account() {
                             <td className="py-4 font-medium text-gray-900 dark:text-white">${parseFloat(order.total_amount || order.total || 0).toFixed(2)}</td>
                             <td className="py-4">
                               <span className={`text-xs px-2 py-1 rounded-full ${
-                                order.status === 'Delivered' || order.status === 'completed'
-                                  ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-400' 
+                                  order.status === 'completed'
+                                    ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-400'
+                                    : order.status === 'cancelled'
+                                    ? 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-400'
                                   : 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-400'
                               }`}>
                                 {order.status || 'Pending'}

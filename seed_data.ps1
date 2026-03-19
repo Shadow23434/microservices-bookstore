@@ -164,8 +164,8 @@ foreach ($book in $books) {
 
     if ($bookHasImageUrlColumn) {
         Invoke-Sqlite -DbPath $db.books -Sql @"
-INSERT INTO app_book (title, author, price, stock, image, category, format, pages, language, publisher, publicationDate, isbn, description)
-SELECT $title, $author, $price, $stock, $image, $category, $format, $pages, $language, $publisher, $publicationDate, $isbn, $description
+INSERT INTO app_book (title, author, price, stock, image, category, format, pages, language, publisher, publicationDate, isbn, description, rating, reviews)
+SELECT $title, $author, $price, $stock, $image, $category, $format, $pages, $language, $publisher, $publicationDate, $isbn, $description, '0.0', 0
 WHERE NOT EXISTS (
     SELECT 1 FROM app_book WHERE title = $title AND author = $author
 );
@@ -173,8 +173,8 @@ WHERE NOT EXISTS (
     }
     else {
         Invoke-Sqlite -DbPath $db.books -Sql @"
-INSERT INTO app_book (title, author, price, stock)
-SELECT $title, $author, $price, $stock
+INSERT INTO app_book (title, author, price, stock, rating, reviews)
+SELECT $title, $author, $price, $stock, '0.0', 0
 WHERE NOT EXISTS (
     SELECT 1 FROM app_book WHERE title = $title AND author = $author
 );

@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import bookService from '../api/bookService';
 import catalogService from '../api/catalogService';
 import recommenderService from '../api/recommenderService';
+import reviewService from '../api/reviewService';
 
 function User(props: any) {
   return (
@@ -59,7 +60,23 @@ export default function Home() {
           bookService.getAllBooks() as unknown as any[],
           catalogService.getCategories() as unknown as any[],
         ]);
-        setFeaturedBooks((booksData || []).slice(0, 4));
+        
+        const initialBooks = (booksData || []).slice(0, 4);
+        
+        // Lấy rating song song cho các sách
+        const booksWithRating = await Promise.all(
+          initialBooks.map(async (book: any) => {
+            try {
+              const ratingData = await reviewService.getBookRating(book.id) as any;
+              if (ratingData && ratingData.average_rating !== null) {
+                return { ...book, rating: ratingData.average_rating, reviews: ratingData.total_reviews };
+              }
+            } catch(e) {}
+            return book;
+          })
+        );
+        
+        setFeaturedBooks(booksWithRating);
         setCategories((categoriesData || []).slice(0, 6));
       } catch (err) {
         console.error('Failed to load home data:', err);
@@ -76,16 +93,31 @@ export default function Home() {
     setIsGenerating(true);
     setRecommendations([]);
     try {
+      let recsToProcess = [];
       if (user?.id) {
-        // Gọi API recommender thật nếu user $ã $ăng nhập
+        // Gửi API recommender thật nếu user đã đăng nhập
         const recs = await recommenderService.getRecommendations(user.id) as unknown as any[];
-        setRecommendations(Array.isArray(recs) ? recs.slice(0, 3) : []);
+        recsToProcess = Array.isArray(recs) ? recs.slice(0, 3) : [];
       } else {
         // Fallback: lấy random 3 sách từ danh sách
         const allBooks = await bookService.getAllBooks() as unknown as any[];
         const shuffled = [...(allBooks || [])].sort(() => 0.5 - Math.random());
-        setRecommendations(shuffled.slice(0, 3));
+        recsToProcess = shuffled.slice(0, 3);
       }
+      
+      const recsWithRating = await Promise.all(
+        recsToProcess.map(async (book: any) => {
+          try {
+            const ratingData = await reviewService.getBookRating(book.id) as any;
+            if (ratingData && ratingData.average_rating !== null) {
+              return { ...book, rating: ratingData.average_rating, reviews: ratingData.total_reviews };
+            }
+          } catch(e) {}
+          return book;
+        })
+      );
+      
+      setRecommendations(recsWithRating);
     } catch (err) {
       console.error('Failed to get recommendations:', err);
       // Fallback to featured books subset
@@ -229,7 +261,7 @@ export default function Home() {
                       <p className="text-xs font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">{book.category || 'General'}</p>
                       <div className="flex items-center">
                         <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                        <span className="ml-1 text-sm text-gray-600 dark:text-gray-400">{book.rating || '0'}</span>
+                          <span className="ml-1 text-sm text-gray-600 dark:text-gray-400">{Number(book.rating || 0).toFixed(1)}</span>
                       </div>
                     </div>
                     <Link to={`/book/${book.id}`} className="block">
@@ -302,7 +334,7 @@ export default function Home() {
                         <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">${book.price || '0.00'}</span>
                         <div className="flex items-center">
                           <Star className="h-3 w-3 text-yellow-400 fill-current" />
-                          <span className="ml-1 text-xs text-gray-600 dark:text-gray-400">{book.rating || '0'}</span>
+                            <span className="ml-1 text-xs text-gray-600 dark:text-gray-400">{Number(book.rating || 0).toFixed(1)}</span>
                         </div>
                       </div>
                     </div>

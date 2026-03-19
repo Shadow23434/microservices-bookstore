@@ -39,7 +39,7 @@
     <div class="form-group" style="margin-bottom:12px;"><label>URL ảnh bìa</label><input id="edit-image"></div>
     <div class="modal-footer">
       <button class="btn" style="background:#e5e7eb;color:#374151" onclick="closeEditModal()">Hủy</button>
-      <button class="btn btn-primary" onclick="saveEditBook()">Lưu thay $ổi</button>
+      <button class="btn btn-primary" onclick="saveEditBook()">Lưu thay đổi</button>
     </div>
   </div>
 </div>
@@ -65,8 +65,9 @@ function renderBooks(books) {
   tbody.innerHTML = books.map(b => {
     const price = Number(b.price).toLocaleString('vi-VN');
     const stockTag = b.stock > 0 ? 'tag-blue' : 'tag-red';
-    const imageCell = b.image
-      ? '<img src="' + b.image + '" alt="' + b.title + '" style="width:56px;height:84px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;">'
+    const imgUrl = b.image || b.imageUrl;
+    const imageCell = imgUrl
+      ? '<img src="' + imgUrl + '" alt="' + b.title + '" style="width:56px;height:84px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb;">'
       : '<div style="width:56px;height:84px;border-radius:8px;border:1px dashed #d1d5db;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:12px;">No image</div>';
     return '<tr>' +
       '<td style="color:#888">#' + b.id + '</td>' +
@@ -89,12 +90,14 @@ function filterBooks() {
 }
 
 function addBook() {
+  const imgVal = document.getElementById('f-image').value.trim();
   const body = {
     title: document.getElementById('f-title').value.trim(),
     author: document.getElementById('f-author').value.trim(),
     price: document.getElementById('f-price').value,
     stock: document.getElementById('f-stock').value,
-    image: document.getElementById('f-image').value.trim(),
+    image: imgVal,
+    imageUrl: imgVal,
   };
   if (!body.title || !body.author || !body.price || !body.stock) {
     showToast('Vui lòng $iền $ầy $ủ thông tin', false); return;
@@ -122,7 +125,7 @@ function editBook(id) {
   document.getElementById('edit-author').value = book.author || '';
   document.getElementById('edit-price').value = book.price || '';
   document.getElementById('edit-stock').value = book.stock || '';
-  document.getElementById('edit-image').value = book.image || '';
+  document.getElementById('edit-image').value = book.image || book.imageUrl || '';
   document.getElementById('editBookModal').classList.add('show');
 }
 
@@ -133,12 +136,14 @@ function closeEditModal() {
 
 function saveEditBook() {
   if (!currentEditBookId) return;
+  const imgVal = document.getElementById('edit-image').value.trim();
   const body = {
     title: document.getElementById('edit-title').value.trim(),
     author: document.getElementById('edit-author').value.trim(),
     price: document.getElementById('edit-price').value,
     stock: document.getElementById('edit-stock').value,
-    image: document.getElementById('edit-image').value.trim(),
+    image: imgVal,
+    imageUrl: imgVal,
   };
 
   if (!body.title || !body.author || !body.price || !body.stock) {

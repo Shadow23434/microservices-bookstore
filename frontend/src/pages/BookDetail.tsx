@@ -36,8 +36,15 @@ export default function BookDetail() {
       setIsLoadingBook(true);
       setError('');
       try {
-        const data = await bookService.getBookById(id);
+        const [data, ratingData] = await Promise.all([
+          bookService.getBookById(id),
+          reviewService.getBookRating(Number(id)).catch(() => null)
+        ]);
         setBook(data);
+        if (ratingData) {
+          setAverageRating((ratingData as any).average_rating);
+          setTotalReviews((ratingData as any).total_reviews || 0);
+        }
       } catch (err) {
         console.error('Failed to load book:', err);
         setError('Không thể tải thông tin sách.');
@@ -125,7 +132,8 @@ export default function BookDetail() {
 
   // Phân tích tên trường từ backend (có thể khác nhau)
   const bookImage = book.image || book.cover_image || `https://picsum.photos/seed/book${book.id}/400/600`;
-  const bookRating = book.rating || averageRating || 0;
+  const rawRating = averageRating !== null && averageRating !== undefined ? averageRating : Number(book.rating || 0);
+  const bookRating = Number(rawRating).toFixed(1);
   const bookStock = book.stock || book.stock_quantity || 15;
 
   return (
@@ -207,8 +215,15 @@ export default function BookDetail() {
             <div className="mb-8">
               <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Format</h3>
               <div className="flex flex-wrap gap-3">
-                {['Hardcover', 'Paperback', 'E-Book', 'Audiobook'].map((fmt) => (
-                  <button key={fmt} className="px-5 py-3 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300 font-medium flex flex-col items-start transition-colors">
+                {Array.from(new Set(['Hardcover', 'Paperback', 'E-Book', 'Audiobook'].concat(book.format ? [book.format] : []))).map((fmt) => (
+                  <button 
+                    key={fmt} 
+                    className={`px-5 py-3 border rounded-xl font-medium flex flex-col items-start transition-colors ${
+                      book.format === fmt 
+                      ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-900/20 dark:text-indigo-400' 
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
                     <span>{fmt}</span>
                   </button>
                 ))}

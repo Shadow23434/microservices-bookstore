@@ -24,7 +24,10 @@
 </div>
 {% endblock %}
 {% block extra_js %}
-function stars(n) { return '<i class="bi bi-star"></i>'.repeat(n) + '☆'.repeat(5-n); }
+function stars(n) { 
+  const val = Math.max(0, Math.min(5, Math.round(Number(n) || 0)));
+  return '<i class="bi bi-star-fill" style="color:#ffc107; margin-right:2px;"></i>'.repeat(val) + '<i class="bi bi-star" style="color:#ccc; margin-right:2px;"></i>'.repeat(5 - val); 
+}
 function load() {
   fetch('/api/reviews/').then(r=>r.json()).then(data=>{
     const items = Array.isArray(data) ? data : [];

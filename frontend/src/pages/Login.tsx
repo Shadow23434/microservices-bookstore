@@ -85,7 +85,7 @@ export default function Login() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Nhập $ịa chỉ email của bạn"
+                  placeholder="Enter your email"
                   required
                   className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-slate-900 dark:text-white focus:border-[#d36d24] focus:ring-2 focus:ring-[#d36d24]/20 outline-none transition-all placeholder:text-slate-400"
                 />
